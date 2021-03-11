@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Huawei Device Co., Ltd.
+ * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,14 +15,14 @@
 
 #include "camera_device.h"
 
-#include <string>
-#include <thread>
-
 #include "codec_interface.h"
 #include "hal_display.h"
 #include "media_log.h"
 #include "meta_data.h"
 #include "securec.h"
+
+#include <string>
+#include <thread>
 
 using namespace OHOS;
 using namespace OHOS::Media;
@@ -33,10 +33,24 @@ const int32_t KEY_TIME_US = 2;       // "timeUs"
 
 namespace OHOS {
 namespace Media {
-inline PicSize Convert2CodecSize(CameraPicSize size)
+inline PicSize Convert2CodecSize(int32_t width, int32_t height)
 {
-    return (PicSize)size;
+    struct SizeMap {
+        PicSize res_;
+        int32_t width_;
+        int32_t height_;
+    };
+    static SizeMap sizeMap[] = {{Resolution_CIF, 352, 288},    {Resolution_360P, 640, 360},
+                                {Resolution_D1_PAL, 720, 576}, {Resolution_D1_NTSC, 720, 480},
+                                {Resolution_720P, 1280, 720},  {Resolution_1080P, 1920, 1080}};
+    for (uint32_t i = 0; i < sizeof(sizeMap) / sizeof(SizeMap); i++) {
+        if (sizeMap[i].width_ == width && sizeMap[i].height_ == height) {
+            return sizeMap[i].res_;
+        }
+    }
+    return Resolution_INVALID;
 }
+
 static int32_t SetVencSource(CODEC_HANDLETYPE codecHdl, uint32_t deviceId)
 {
     Param param = {.key = KEY_DEVICE_ID, .val = (void *)&deviceId, .size = sizeof(uint32_t)};
@@ -86,7 +100,7 @@ static int32_t
     param[paramIndex].size = sizeof(Profile);
     paramIndex++;
 
-    PicSize picSize = Convert2CodecSize(attr->size);
+    PicSize picSize = Convert2CodecSize(attr->width, attr->height);
     MEDIA_DEBUG_LOG("picSize=%d", picSize);
     param[paramIndex].key = KEY_VIDEO_PIC_SIZE;
     param[paramIndex].val = &picSize;
@@ -115,7 +129,8 @@ static int32_t
     return HAL_MEDIA_OK;
 }
 
-static int32_t CameraCreateJpegEnc(uint32_t srcDev, HalVideoProcessorAttr *attr, CODEC_HANDLETYPE *codecHdl)
+static int32_t
+    CameraCreateJpegEnc(FrameConfig &fc, uint32_t srcDev, HalVideoProcessorAttr *attr, CODEC_HANDLETYPE *codecHdl)
 {
     const char *videoEncName = "codec.jpeg.hardware.encoder";
     const uint32_t maxParamNum = 5;
@@ -134,7 +149,7 @@ static int32_t CameraCreateJpegEnc(uint32_t srcDev, HalVideoProcessorAttr *attr,
     param[paramIndex].size = sizeof(AvCodecMime);
     paramIndex++;
 
-    PicSize picSize = Convert2CodecSize(attr->size);
+    PicSize picSize = Convert2CodecSize(attr->width, attr->height);
     param[paramIndex].key = KEY_VIDEO_PIC_SIZE;
     param[paramIndex].val = &picSize;
     param[paramIndex].size = sizeof(PicSize);
@@ -143,6 +158,21 @@ static int32_t CameraCreateJpegEnc(uint32_t srcDev, HalVideoProcessorAttr *attr,
     int32_t ret = CodecCreate(videoEncName, param, paramIndex, codecHdl);
     if (ret != 0) {
         return HAL_MEDIA_ERR;
+    }
+
+    int32_t qfactor = -1;
+    fc.GetParameter(PARAM_KEY_IMAGE_ENCODE_QFACTOR, qfactor);
+    if (qfactor != -1) {
+        MEDIA_DEBUG_LOG("qfactor=%d", qfactor);
+        Param jpegParam = {
+            .key = KEY_IMAGE_Q_FACTOR,
+            .val = &qfactor,
+            .size = sizeof(qfactor)
+        };
+        ret = CodecSetParameter(*codecHdl, &jpegParam, 1);
+        if (ret != 0) {
+            MEDIA_ERR_LOG("CodecSetParameter set jpeg qfactor failed.(ret=%u)", ret);
+        }
     }
 
     ret = SetVencSource(*codecHdl, srcDev);
@@ -172,9 +202,8 @@ static int32_t CopyCodecOutput(void *dst, uint32_t *size, OutputInfo *buffer)
 
 static int32_t FindAvailProcessorIdx(Surface &surface, vector<HalVideoProcessorAttr> &attrs)
 {
-    CameraPicSize picSize = HalConvert2StandardSize(surface.GetWidth(), surface.GetHeight());
     for (uint32_t i = 0; i < attrs.size(); i++) {
-        if (attrs[i].size == picSize) {
+        if (attrs[i].width == surface.GetWidth() && attrs[i].height == surface.GetHeight()) {
             return i;
         }
     }
@@ -412,7 +441,7 @@ int32_t CaptureAssistant::SetFrameConfig(FrameConfig &fc,
         return MEDIA_ERR;
     }
     uint32_t deviceId = HalGetProcessorDeviceId(hdls[idx]);
-    int32_t ret = CameraCreateJpegEnc(deviceId, &attrs[idx], &vencHdl_);
+    int32_t ret = CameraCreateJpegEnc(fc, deviceId, &attrs[idx], &vencHdl_);
     if (ret != HAL_MEDIA_OK) {
         MEDIA_ERR_LOG("Create capture venc failed.");
         return MEDIA_ERR;
@@ -504,7 +533,8 @@ int32_t CameraDevice::Initialize(CameraAbility &ability)
     for (int i = 0; i < size; i++) {
         prcessorAttrs_.emplace_back(attrs[i]);
         prcessorHdls_.emplace_back(hdls[i]);
-        range.emplace_back(attrs[i].size);
+        CameraPicSize tmpSize = {.width = attrs[i].width, .height = attrs[i].height};
+        range.emplace_back(tmpSize);
     }
     ability.SetParameterRange(PARAM_KEY_SIZE, range);
 

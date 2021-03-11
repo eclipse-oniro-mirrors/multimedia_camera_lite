@@ -1,10 +1,10 @@
 /*
- * Copyright(c) 2020 Huawei Device Co., Ltd.
+ * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http ://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -127,6 +127,7 @@ public:
         auto p = cameraMapCache_.find(cameraId);
         if (p == cameraMapCache_.end()) {
             handler.Post([&callback, &cameraId] { callback.OnCreateFailed(cameraId, MEDIA_ERR); });
+            return;
         }
         p->second->RegistCb(callback, handler);
         cameraService_->CreateCamera(cameraId);
