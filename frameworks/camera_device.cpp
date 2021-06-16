@@ -40,15 +40,15 @@ inline PicSize Convert2CodecSize(int32_t width, int32_t height)
         int32_t width_;
         int32_t height_;
     };
-    static SizeMap sizeMap[] = {{Resolution_CIF, 352, 288},    {Resolution_360P, 640, 360},
-                                {Resolution_D1_PAL, 720, 576}, {Resolution_D1_NTSC, 720, 480},
-                                {Resolution_720P, 1280, 720},  {Resolution_1080P, 1920, 1080}};
+    static SizeMap sizeMap[] = {{RESOLUTION_CIF, 352, 288},    {RESOLUTION_360P, 640, 360},
+                                {RESOLUTION_D1_PAL, 720, 576}, {RESOLUTION_D1_NTSC, 720, 480},
+                                {RESOLUTION_720P, 1280, 720},  {RESOLUTION_1080P, 1920, 1080}};
     for (uint32_t i = 0; i < sizeof(sizeMap) / sizeof(SizeMap); i++) {
         if (sizeMap[i].width_ == width && sizeMap[i].height_ == height) {
             return sizeMap[i].res_;
         }
     }
-    return Resolution_INVALID;
+    return RESOLUTION_INVALID;
 }
 
 static int32_t SetVencSource(CODEC_HANDLETYPE codecHdl, uint32_t deviceId)

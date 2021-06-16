@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 #include "camera_service.h"
+#ifdef __LINUX__
+#include "hal_display.h"
+#include "hal_media.h"
+#endif
 #include "media_log.h"
 
 using namespace std;
@@ -67,6 +71,9 @@ void CameraService::CreateCamera(string cameraId)
         MEDIA_ERR_LOG("This camera does not exists. (cameraId=%s)", cameraId.c_str());
         return;
     }
+#ifdef __LINUX__
+    VoLayerInit(0);
+#endif
     cameraServiceCb_->OnCameraStatusChange(cameraId, CameraServiceCallback::CAMERA_STATUS_CREATED, device_);
 }
 
