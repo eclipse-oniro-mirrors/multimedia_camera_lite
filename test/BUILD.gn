@@ -20,13 +20,13 @@ group("lite_camera_test") {
 }
 
 if (ohos_build_type == "debug") {
-    unittest("lite_camera_unittest") {
+  unittest("lite_camera_unittest") {
     output_dir = "$root_out_dir/test/unittest/camera_lite"
     sources = [ "unittest/camera_lite_test.cpp" ]
     include_dirs = [
     "//foundation/multimedia/camera_lite/interfaces/kits",
     "//foundation/multimedia/media_lite/interfaces/kits/recorder_lite",
-    "./unittest",
+    "//foundation/multimedia/camera_lite/test/unittest",
   ]
     deps = [
     "//foundation/graphic/surface:lite_surface",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
+ * Copyright (C) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,11 +15,25 @@
 
 #include "camera_lite_test.h"
 
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <cstdlib>
+#include <algorithm>
+
+#include "camera_kit.h"
+
 using namespace std;
 using namespace OHOS;
 using namespace OHOS::Media;
 using namespace testing::ext;
 
+namespace OHOS {
 /* *
  * get current dir
  * @return  string current file path of the test suits
@@ -85,31 +99,58 @@ void CameraLiteTest::TearDown(void)
     cout << "TearDown." << endl;
 }
 
+int32_t SetupAudioSource(const Recorder &rec)
+{
+    Recorder *recorder = (Recorder*) &rec;
+    int32_t ret = SUCCESS;
+    int32_t audioSourceId = 0;
+    AudioCodecFormat audioFormat = AAC_LC;
+    AudioSourceType inputSource = AUDIO_MIC;
+    int32_t sampleRate = 48000;
+    int32_t channelCount = 1;
+    int32_t audioEncodingBitRate = sampleRate;
+
+    if ((ret = recorder->SetAudioSource(inputSource, audioSourceId)) != SUCCESS) {
+        cout << "SetAudioSource failed." << ret << endl;
+        return FAIL;
+    }
+    if ((ret = recorder->SetAudioEncoder(audioSourceId, audioFormat)) != SUCCESS) {
+        cout << "SetAudioEncoder failed." << ret << endl;
+        return FAIL;
+    }
+    if ((ret = recorder->SetAudioSampleRate(audioSourceId, sampleRate)) != SUCCESS) {
+        cout << "SetAudioSampleRate failed." << ret << endl;
+        return FAIL;
+    }
+    if ((ret = recorder->SetAudioChannels(audioSourceId, channelCount)) != SUCCESS) {
+        cout << "SetAudioChannels failed." << ret << endl;
+        return FAIL;
+    }
+    if ((ret = recorder->SetAudioEncodingBitRate(audioSourceId, audioEncodingBitRate)) != SUCCESS) {
+        cout << "SetAudioEncodingBitRate failed." << ret << endl;
+        return FAIL;
+    }
+
+    return SUCCESS;
+}
+
 /* *
  * creat Recorder
  */
-Recorder *SampleCreateRecorder()
+Recorder* SampleCreateRecorder()
 {
     int ret = 0;
-    int32_t sampleRate = 48000;
-    int32_t channelCount = 1;
-    AudioCodecFormat audioFormat = AAC_LC;
-    AudioSourceType inputSource = AUDIO_MIC;
-    int32_t audioEncodingBitRate = sampleRate;
     VideoSourceType source = VIDEO_SOURCE_SURFACE_ES;
     int32_t frameRate = 30;
     double fps = 30;
     int32_t rate = 4096;
     int32_t sourceId = 0;
-    int32_t audioSourceId = 0;
     int32_t width = 1920;
     int32_t height = 1080;
-    VideoCodecFormat encoder;
-    encoder = HEVC;
+    VideoCodecFormat encoder = HEVC;
     Recorder *recorder = new Recorder();
     if ((ret = recorder->SetVideoSource(source, sourceId)) != SUCCESS) {
         cout << "SetVideoSource failed." << ret << endl;
-        delete recorder;
         return nullptr;
     }
     if ((ret = recorder->SetVideoEncoder(sourceId, encoder)) != SUCCESS) {
@@ -137,31 +178,12 @@ Recorder *SampleCreateRecorder()
         delete recorder;
         return nullptr;
     }
-    if ((ret = recorder->SetAudioSource(inputSource, audioSourceId)) != SUCCESS) {
-        cout << "SetAudioSource failed." << ret << endl;
+
+    if ((ret = SetupAudioSource(*recorder) != SUCCESS)) {
         delete recorder;
         return nullptr;
     }
-    if ((ret = recorder->SetAudioEncoder(audioSourceId, audioFormat)) != SUCCESS) {
-        cout << "SetAudioEncoder failed." << ret << endl;
-        delete recorder;
-        return nullptr;
-    }
-    if ((ret = recorder->SetAudioSampleRate(audioSourceId, sampleRate)) != SUCCESS) {
-        cout << "SetAudioSampleRate failed." << ret << endl;
-        delete recorder;
-        return nullptr;
-    }
-    if ((ret = recorder->SetAudioChannels(audioSourceId, channelCount)) != SUCCESS) {
-        cout << "SetAudioChannels failed." << ret << endl;
-        delete recorder;
-        return nullptr;
-    }
-    if ((ret = recorder->SetAudioEncodingBitRate(audioSourceId, audioEncodingBitRate)) != SUCCESS) {
-        cout << "SetAudioEncodingBitRate failed." << ret << endl;
-        delete recorder;
-        return nullptr;
-    }
+
     return recorder;
 }
 
@@ -174,7 +196,7 @@ class SampleFrameStateCallback : public FrameStateCallback {
      * @param filename filename
      * @return  check result
      */
-    int32_t FileCheck(const char *filename)
+    int32_t FileCheck(const string &filename)
     {
         fstream fileTmp;
         fileTmp.open(filename);
@@ -192,11 +214,12 @@ class SampleFrameStateCallback : public FrameStateCallback {
     * Save Capture
     * @return
     */
-    int32_t SampleSaveCapture(string testPath, const char *p, uint32_t size)
+    int32_t SampleSaveCapture(string testPath, char *p, uint32_t size)
     {
         cout << "Start saving picture" << endl;
         string filePath = "";
-        struct timeval tv;
+        struct timeval tv = {0};
+
         gettimeofday(&tv, NULL);
         struct tm *ltm = localtime(&tv.tv_sec);
         if (ltm != nullptr) {
@@ -209,11 +232,11 @@ class SampleFrameStateCallback : public FrameStateCallback {
             cout << "Saving picture end" << endl;
         }
         const char *filename = filePath.data();
-        int32_t ret = FileCheck(filename);
+        int32_t ret = FileCheck(string(filename));
         return ret;
     }
 
-    void OnFrameFinished(Camera &camera, FrameConfig &fc, FrameResult &result) override
+    void OnFrameFinished(Camera &cam, FrameConfig &fc, FrameResult &res) override
     {
         g_onFrameStartedFlag = true;
         g_onFrameProgressedFlag = true;
@@ -258,7 +281,6 @@ public:
     {
         if (recorder_ != nullptr) {
             recorder_->Release();
-            delete recorder_;
         }
         if (cam_ != nullptr) {
             cam_->Release();
@@ -270,7 +292,7 @@ public:
         g_onCreatedFlag = true;
         cout << "Sample recv OnCreate camera." << endl;
         auto config = CameraConfig::CreateCameraConfig();
-        config->SetFrameStateCallback(&fsCb_, &eventHandler_);
+        config->SetFrameStateCallback(&fsCb, &eventHandler_);
         c.Configure(*config);
         g_onConfigureFlag = true;
         cam_ = &c;
@@ -279,7 +301,8 @@ public:
     void OnCreateFailed(const std::string cameraId, int32_t errorCode) override
     {
         g_onCreateFailedFlag = true;
-        cout << "Sample recv OnCreateFailed camera." << endl;
+        cout << "Camera  ID: " <<  cameraId << endl;
+        cout << "Sample recv OnCreateFailed camera.: " <<  errorCode << endl;
     }
 
     void OnReleased(Camera &c) override
@@ -291,7 +314,7 @@ public:
     void StartRecord()
     {
         int ret;
-        if (isRecording_) {
+        if (isRecording) {
             cout << "Camera is already recording." << endl;
             return;
         }
@@ -322,8 +345,8 @@ public:
         fc->AddSurface(*surface);
         ret = recorder_->Start();
         if (ret != SUCCESS) {
-            delete fc;
             cout << "recorder start failed. ret=" << ret << endl;
+            delete fc;
             return;
         }
         static int cnt = 3;
@@ -336,25 +359,24 @@ public:
 
         ret = cam_->TriggerLoopingCapture(*fc);
         if (ret != 0) {
-            delete fc;
             cout << "camera start recording failed. ret=" << ret << endl;
             return;
         }
-        isRecording_ = true;
+        isRecording = true;
         cout << "camera start recording succeed." << endl;
     }
 
     void StartPreview()
     {
-        if (isPreviewing_) {
+        if (isPreviewing) {
             cout << "Camera is already previewing." << endl;
             return;
         }
         FrameConfig *fc = new FrameConfig(FRAME_CONFIG_PREVIEW);
         Surface *surface = Surface::CreateSurface();
         if (surface == nullptr) {
-            delete fc;
             cout << "CreateSurface failed" << endl;
+            delete fc;
             return;
         }
         surface->SetWidthAndHeight(WIDTH, HEIGHT);
@@ -372,23 +394,23 @@ public:
         }
         int32_t ret = cam_->TriggerLoopingCapture(*fc);
         if (ret != 0) {
-            delete fc;
             cout << "camera start preview failed. ret=" << ret << endl;
+            delete fc;
             return;
         }
         g_onCaptureTriggerCompletedFlag = true;
         delete surface;
-        isPreviewing_ = true;
+        isPreviewing = true;
         cout << "camera start preview succeed." << endl;
     }
 
-    void Capture()
+    void Capture(void)
     {
         FrameConfig *fc = new FrameConfig(FRAME_CONFIG_CAPTURE);
         Surface *surface = Surface::CreateSurface();
         if (surface == nullptr) {
-            delete fc;
             cout << "CreateSurface failed" << endl;
+            delete fc;
             return;
         }
         surface->SetWidthAndHeight(1920, 1080); /* 1920:width,1080:height */
@@ -416,16 +438,16 @@ public:
             return;
         }
         cam_->StopLoopingCapture();
-        isPreviewing_ = false;
-        isRecording_ = false;
+        isPreviewing = false;
+        isRecording = false;
     }
 
-    bool isPreviewing_ = false;
-    bool isRecording_ = false;
+    bool isPreviewing = false;
+    bool isRecording = false;
     EventHandler &eventHandler_;
     Camera *cam_ = nullptr;
     Recorder *recorder_ = nullptr;
-    SampleFrameStateCallback fsCb_;
+    SampleFrameStateCallback fsCb;
 };
 
 /* *
@@ -449,7 +471,7 @@ public:
         g_onCreatedFlag = true;
         cout << "camera Create success." << endl;
         auto config = CameraConfig::CreateCameraConfig();
-        config->SetFrameStateCallback(&fsCb_, &eventHandler_);
+        config->SetFrameStateCallback(&fsCb, &eventHandler_);
         c.Configure(*config);
         cam_ = &c;
     }
@@ -457,7 +479,8 @@ public:
     void OnCreateFailed(const std::string cameraId, int32_t errorCode) override
     {
         g_onCreateFailedFlag = true;
-        cout << "Camera Create Failed." << endl;
+        cout << "Camera  ID: " <<  cameraId << endl;
+        cout << "Camera Create Failed: " <<  errorCode << endl;
     }
 
     void OnReleased(Camera &c) override
@@ -475,12 +498,13 @@ public:
     void OnConfigureFailed(const std::string cameraId, int32_t errorCode) override
     {
         g_onConfigureFailedFlag = true;
-        cout << "Camera Configured failed." << endl;
+        cout << "Camera  ID: " <<  cameraId << endl;
+        cout << "Camera Configured failed: " <<  errorCode << endl;
     }
 
     EventHandler &eventHandler_;
     Camera *cam_ = nullptr;
-    SampleFrameStateCallback fsCb_;
+    SampleFrameStateCallback fsCb;
 };
 
 /* *
@@ -495,7 +519,7 @@ public:
     // camera device status changed
     void OnCameraStatus(std::string cameraId, int32_t status) override
     {
-        cout << "SampleCameraDeviceCallback OnCameraStatus\n" << endl;
+        cout << "SampleCameraDeviceCallback OnCameraStatus cam Id: \n" << cameraId <<endl;
         if (status == CAMERA_DEVICE_STATE_AVAILABLE) {
             g_onCameraAvailableFlag = true;
             cout << "SampleCameraDeviceCallback onCameraAvailable\n" << endl;
@@ -549,7 +573,7 @@ using namespace std;
  * EnvConditions: NA
  * CaseDescription:  Get camera ID Test.
  */
-HWTEST_F(CameraLiteTest, Test_GetCameraIDs, Level1)
+HWTEST_F(CameraLiteTest, Test_GetCameraIDs_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -569,7 +593,7 @@ HWTEST_F(CameraLiteTest, Test_GetCameraIDs, Level1)
  * EnvConditions: NA
  * CaseDescription:  Get camera ability Test.
  */
-HWTEST_F(CameraLiteTest, Test_GetCameraAbility, Level1)
+HWTEST_F(CameraLiteTest, Test_GetCameraAbility_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -589,7 +613,7 @@ HWTEST_F(CameraLiteTest, Test_GetCameraAbility, Level1)
  * EnvConditions: NA
  * CaseDescription:  create camerakit instance Test.
  */
-HWTEST_F(CameraLiteTest, TestCreatCamerakit, Level1)
+HWTEST_F(CameraLiteTest, TestCreatCamerakit_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     cameraKit = CameraKit::GetInstance();
@@ -605,7 +629,7 @@ HWTEST_F(CameraLiteTest, TestCreatCamerakit, Level1)
  * EnvConditions: NA
  * CaseDescription: Get cameraKit deviceCallback
  */
-HWTEST_F(CameraLiteTest, TestNewDeviceCallback, Level1)
+HWTEST_F(CameraLiteTest, TestNewDeviceCallback_001, Level1)
 {
     SampleCameraDeviceCallback *deviceCallback = nullptr;
     deviceCallback = new SampleCameraDeviceCallback();
@@ -622,7 +646,7 @@ HWTEST_F(CameraLiteTest, TestNewDeviceCallback, Level1)
  * EnvConditions: NA
  * CaseDescription: Get cameraKit supported Size
  */
-HWTEST_F(CameraLiteTest, TestGetSupportedSizes, Level1)
+HWTEST_F(CameraLiteTest, TestGetSupportedSizes_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -641,7 +665,7 @@ HWTEST_F(CameraLiteTest, TestGetSupportedSizes, Level1)
  * EnvConditions: NA
  * CaseDescription: Register Camera device callback
  */
-HWTEST_F(CameraLiteTest, Test_RegisterCameraDeviceCallback, Level1)
+HWTEST_F(CameraLiteTest, Test_RegisterCameraDeviceCallback_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -668,7 +692,7 @@ HWTEST_F(CameraLiteTest, Test_RegisterCameraDeviceCallback, Level1)
  * EnvConditions: NA
  * CaseDescription: Unregister Camera Device Callback
  */
-HWTEST_F(CameraLiteTest, Test_UnregisterCameraDeviceCallback, Level1)
+HWTEST_F(CameraLiteTest, Test_UnregisterCameraDeviceCallback_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -698,7 +722,7 @@ HWTEST_F(CameraLiteTest, Test_UnregisterCameraDeviceCallback, Level1)
  * EnvConditions: NA
  * CaseDescription: Capture On Configure
  */
-HWTEST_F(CameraLiteTest, TestCaptureOnConfigure, Level1)
+HWTEST_F(CameraLiteTest, TestCaptureOnConfigure_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -722,7 +746,7 @@ HWTEST_F(CameraLiteTest, TestCaptureOnConfigure, Level1)
  * EnvConditions: NA
  * CaseDescription: Create Camera
  */
-HWTEST_F(CameraLiteTest, TestCreateCamera, Level1)
+HWTEST_F(CameraLiteTest, TestCreateCamera_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -747,7 +771,7 @@ HWTEST_F(CameraLiteTest, TestCreateCamera, Level1)
  * EnvConditions: NA
  * CaseDescription: Create Camera with error camera id
  */
-HWTEST_F(CameraLiteTest, TestCapture_Create_Camera_ERROR_cameraId, Level1)
+HWTEST_F(CameraLiteTest, TestCapture_Create_Camera_ERROR_cameraId_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     cameraKit = CameraKit::GetInstance();
@@ -770,7 +794,7 @@ HWTEST_F(CameraLiteTest, TestCapture_Create_Camera_ERROR_cameraId, Level1)
  * EnvConditions: NA
  * CaseDescription: Test Capture Frame config
  */
-HWTEST_F(CameraLiteTest, TestCapture_Frame_config, Level1)
+HWTEST_F(CameraLiteTest, TestCapture_Frame_config_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -794,7 +818,7 @@ HWTEST_F(CameraLiteTest, TestCapture_Frame_config, Level1)
  * EnvConditions: NA
  * CaseDescription: Test Create Surface
  */
-HWTEST_F(CameraLiteTest, TestCapture_Create_Surface, Level1)
+HWTEST_F(CameraLiteTest, TestCapture_Create_Surface_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -825,7 +849,7 @@ HWTEST_F(CameraLiteTest, TestCapture_Create_Surface, Level1)
  * EnvConditions: NA
  * CaseDescription: Get Surface Size
  */
-HWTEST_F(CameraLiteTest, TestCapture_GetSurfaceSize, Level1)
+HWTEST_F(CameraLiteTest, TestCapture_GetSurfaceSize_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -858,7 +882,7 @@ HWTEST_F(CameraLiteTest, TestCapture_GetSurfaceSize, Level1)
  * EnvConditions: NA
  * CaseDescription: Get FrameConfig size
  */
-HWTEST_F(CameraLiteTest, TestCapture_frameConfig_getsize, Level1)
+HWTEST_F(CameraLiteTest, TestCapture_frameConfig_getsize_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -891,7 +915,7 @@ HWTEST_F(CameraLiteTest, TestCapture_frameConfig_getsize, Level1)
  * EnvConditions: NA
  * CaseDescription: Test Get Frame
  */
-HWTEST_F(CameraLiteTest, TestOnFrameProgressed, Level1)
+HWTEST_F(CameraLiteTest, TestOnFrameProgressed_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -917,7 +941,7 @@ HWTEST_F(CameraLiteTest, TestOnFrameProgressed, Level1)
  * EnvConditions: NA
  * CaseDescription: Get FrameConfig onConfig
  */
-HWTEST_F(CameraLiteTest, TestGetFrameConfigureType, Level1)
+HWTEST_F(CameraLiteTest, TestGetFrameConfigureType_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -942,7 +966,7 @@ HWTEST_F(CameraLiteTest, TestGetFrameConfigureType, Level1)
  * EnvConditions: NA
  * CaseDescription: Test Get Frame finished
  */
-HWTEST_F(CameraLiteTest, TestFrameCompletedFlag, Level1)
+HWTEST_F(CameraLiteTest, TestFrameCompletedFlag_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -967,7 +991,7 @@ HWTEST_F(CameraLiteTest, TestFrameCompletedFlag, Level1)
  * EnvConditions: NA
  * CaseDescription: Test GetFrame Error
  */
-HWTEST_F(CameraLiteTest, TestonFrameErrorFlag, Level1)
+HWTEST_F(CameraLiteTest, TestonFrameErrorFlag_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -992,7 +1016,7 @@ HWTEST_F(CameraLiteTest, TestonFrameErrorFlag, Level1)
  * EnvConditions: NA
  * CaseDescription: Test Capture Success
  */
-HWTEST_F(CameraLiteTest, TestCapture01, Level1)
+HWTEST_F(CameraLiteTest, TestCapture_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -1018,7 +1042,7 @@ HWTEST_F(CameraLiteTest, TestCapture01, Level1)
  * EnvConditions: NA
  * CaseDescription: Test capture and record
  */
-HWTEST_F(CameraLiteTest, TestRecord01, Level1)
+HWTEST_F(CameraLiteTest, TestRecord_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -1047,7 +1071,7 @@ HWTEST_F(CameraLiteTest, TestRecord01, Level1)
  * EnvConditions: NA
  * CaseDescription: Test get event handler
  */
-HWTEST_F(CameraLiteTest, TestGetEventHandler, Level1)
+HWTEST_F(CameraLiteTest, TestGetEventHandler_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
     list<string> camList;
@@ -1067,3 +1091,4 @@ HWTEST_F(CameraLiteTest, TestGetEventHandler, Level1)
     camStateMng.Stop();
     cameraKit = NULL;
 }
+} // namespace OHOS

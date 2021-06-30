@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
+ * Copyright (C) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,23 +17,11 @@
 #define CAMERA_LITE_TEST_H
 
 #include "gtest/gtest.h"
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
-#include <string>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <stdlib.h>
-#include "camera_kit.h"
 #include "recorder.h"
 
+namespace OHOS {
 const int32_t RET_OK = 0;
 const int32_t RET_ERR = -1;
-const int32_t FrameErrCode = -1;         // frame error code
-const int32_t RecoderSourceMaxCount = 4; // max recorder source setting
-const int32_t FdNull = -1;               // fd is null
 const int32_t FRAME_RATE_DEFAULT = 30;
 const int32_t OK = 0;
 const int32_t FAIL = -1;
@@ -81,4 +69,5 @@ public:
     // TearDown
     void TearDown(void);
 };
+} // namespace OHOS
 #endif // CAMERA_LITE_TEST_H
