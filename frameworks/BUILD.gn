@@ -3,41 +3,54 @@ import("//build/lite/config/component/lite_component.gni")
 shared_library("camera_lite") {
   sources = [
     "camera_ability.cpp",
+    "camera_info_impl.cpp",
     "camera_config.cpp",
-    "camera_device.cpp",
     "camera_impl.cpp",
     "camera_kit.cpp",
     "camera_manager.cpp",
-    "camera_service.cpp",
     "event_handler.cpp",
     "frame_config.cpp",
+    "camera_client.cpp",
+    "camera_device_client.cpp",
+    "camera_service_client.cpp",
+  ]
+  include_dirs = [
+    "//foundation/multimedia/camera_lite/services/include",
+    "//utils/native/lite/include",
+    "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
+    "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
+    "//foundation/distributedschedule/samgr_lite/interfaces/kits/communication/broadcast",
+    "//foundation/communication/ipc_lite/interfaces/kits",
+    "//base/security/permission/interfaces/kits/permission_lite",
+  ]
+  public_configs = [ ":camera_client_external_library_config" ]
+
+  ldflags = [
+    "-lstdc++",
+    "-lpthread",
+    "-lcodec",
+    "-lhdi_videodisplayer",
+    "-L$ohos_root_path/$root_out_dir",
   ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
-  include_dirs = [
-    "//base/security/permission/interfaces/kits/permission_lite",
-    "//drivers/peripheral/codec/interfaces/include",
-    "//foundation/multimedia/utils/lite/hals",
-  ]
-
-  ldflags = [ "-lstdc++" ]
-  ldflags += [ "-lcodec" ]
-  ldflags += [ "-lhdi_media" ]
-  ldflags += [ "-L$ohos_root_path/$root_out_dir" ]
-  public_configs = [ ":camera_external_library_config" ]
   deps = [
-    "$ohos_vendor_adapter_dir:hardware_media_sdk",
-    "$ohos_vendor_adapter_dir/../modules/middleware:middleware_source_sdk",
-    "$ohos_vendor_adapter_dir/multimedia:libhdi_media",
     "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
     "//base/security/permission/services/permission_lite/pms_client:pms_client",
+    "//device/hisilicon/hardware:hardware_media_sdk",
+    "//device/hisilicon/modules/middleware:middleware_source_sdk",
+    "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
-  public_deps = [ "//foundation/graphic/surface:lite_surface" ]
+  public_deps = [
+    "//foundation/graphic/surface:lite_surface",
+    "//foundation/multimedia/media_lite/frameworks/recorder_lite:recorder_lite",
+    "//foundation/multimedia/utils/lite:media_common",
+  ]
 }
 
-config("camera_external_library_config") {
+config("camera_client_external_library_config") {
   include_dirs = [ "//foundation/multimedia/camera_lite/interfaces/kits" ]
   include_dirs += [ "//foundation/multimedia/utils/lite/interfaces/kits" ]
 }

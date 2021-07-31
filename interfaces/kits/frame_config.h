@@ -44,9 +44,13 @@
 
 namespace OHOS {
 namespace Media {
+
 constexpr int32_t FRAME_CONFIG_PREVIEW = 0;
 constexpr int32_t FRAME_CONFIG_RECORD = 1;
 constexpr int32_t FRAME_CONFIG_CAPTURE = 2;
+constexpr int32_t FRAME_CONFIG_CALLBACK = 3;
+constexpr int32_t PRIVATE_TAG_LEN = 32;
+
 /**
  * @brief Provides functions to configure frames.
  *
@@ -113,7 +117,7 @@ public:
      * @param key Indicates the common parameter key to set.
      * @param value Indicates the common parameter value to set.
      */
-    template <typename T> void SetParameter(uint32_t key, const T value)
+    template<typename T> void SetParameter(uint32_t key, const T value)
     {
         SetValue(key, static_cast<const void *>(&value));
     }
@@ -130,10 +134,26 @@ public:
             value = *pvalue;
         }
     }
+
+	/**
+     * @brief set the private config value
+     * @param value Indicates the private config value.
+     * @param len Indicates the length of the private config value;
+     */
+    void SetVendorParameter(uint8_t *value, uint32_t len);
+
+    /**
+     * @brief get the private config value
+     * @param value Indicates the private config value.
+     * @param len Indicates the length of the private config value;
+     */
+    void GetVendorParameter(uint8_t *value, uint32_t len);
+
 private:
     int32_t type_;
     std::list<Surface *> surfaceList_;
     std::map<uint32_t, int32_t> keyMap_;
+	uint8_t privateTag_[PRIVATE_TAG_LEN];
     void *GetValue(uint32_t key);
     void SetValue(uint32_t key, const void *value);
 };

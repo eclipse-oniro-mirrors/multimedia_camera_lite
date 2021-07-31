@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
+ * Copyright(c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http ://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 #include "camera_manager.h"
-
-#include <list>
-#include <map>
-
 #include "camera_impl.h"
-#include "camera_service.h"
+#include "camera_service_client.h"
+#include "camera_service_callback.h"
+#include "media_log.h"
+
+#include <cstdio>
+#include <map>
 
 using namespace std;
 namespace OHOS {
@@ -27,10 +28,8 @@ class CameraManagerImpl : public CameraManager, public CameraServiceCallback {
 public:
     CameraManagerImpl()
     {
-        // get client instance of camera service
-        cameraService_ = CameraService::GetInstance();
-        // Since service is running in the current process now, it always succeed
-        cameraService_->Initialize(this);
+        cameraServiceClient_ = CameraServiceClient::GetInstance();
+        cameraServiceClient_->InitCameraServiceClient(this);
     }
     ~CameraManagerImpl()
     {
@@ -41,14 +40,13 @@ public:
 
     void OnCameraServiceInitialized(list<string> &availCameraIdList) override
     {
-        MEDIA_DEBUG_LOG("Camera manager initializing.");
         /* cameraService_ cannot be nullptr as OnCameraServiceInitialized is a callback of cameraService_ */
         for (auto &cameraId : availCameraIdList) {
             InitCameraAbility(cameraId);
         }
     }
 
-    void OnCameraStatusChange(string &cameraId, CameraStauts status, CameraDevice *device = nullptr) override
+    void OnCameraStatusChange(string &cameraId, CameraStauts status) override
     {
         auto p = cameraMapCache_.find(cameraId);
         switch (status) {
@@ -74,7 +72,7 @@ public:
                 break;
             case CAMERA_STATUS_CREATED:
                 if (p != cameraMapCache_.end()) {
-                    p->second->OnCreate(device);
+                    p->second->OnCreate(cameraId);
                 }
                 break;
             case CAMERA_STATUS_CREATE_FAILED:
@@ -119,29 +117,42 @@ public:
     const CameraAbility *GetCameraAbility(const string &cameraId) override
     {
         auto camera = cameraMapCache_.find(cameraId);
+        if (camera == cameraMapCache_.end()) {
+            return nullptr;
+        }
         return camera->second->GetAbility();
+    }
+
+    const CameraInfo *GetCameraInfo(const string &cameraId) override
+    {
+        auto camera = cameraMapCache_.find(cameraId);
+        if (camera == cameraMapCache_.end()) {
+            return nullptr;
+        }
+        return camera->second->GetInfo();
     }
 
     void CreateCamera(const string &cameraId, CameraStateCallback &callback, EventHandler &handler) override
     {
         auto p = cameraMapCache_.find(cameraId);
         if (p == cameraMapCache_.end()) {
+            MEDIA_ERR_LOG("The cameraId %s is not available", cameraId.c_str());
             handler.Post([&callback, &cameraId] { callback.OnCreateFailed(cameraId, MEDIA_ERR); });
             return;
         }
         p->second->RegistCb(callback, handler);
-        cameraService_->CreateCamera(cameraId);
+        cameraServiceClient_->CreateCamera(cameraId);
     }
-
 private:
-    CameraService *cameraService_;
+    CameraServiceClient *cameraServiceClient_;
     map<string, CameraImpl *> cameraMapCache_;
     list<pair<CameraDeviceCallback *, EventHandler *>> deviceCbList_;
 
     void InitCameraAbility(string &cameraId)
     {
-        auto ability = cameraService_->GetCameraAbility(cameraId);
-        CameraImpl *cam = new (nothrow) CameraImpl(cameraId, ability);
+        auto ability = cameraServiceClient_->GetCameraAbility(cameraId);
+        auto info = cameraServiceClient_->GetCameraInfo(cameraId);
+        CameraImpl *cam = new (nothrow) CameraImpl(cameraId, ability, info);
         if (cam == nullptr) {
             MEDIA_FATAL_LOG("New object failed.");
             return;

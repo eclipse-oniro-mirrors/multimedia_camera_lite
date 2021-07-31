@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
+ * Copyright(c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http ://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,8 @@
 
 #include "camera.h"
 #include "camera_ability.h"
-#include "camera_device.h"
+#include "camera_info.h"
+#include "camera_device_client.h"
 #include "camera_state_callback.h"
 
 namespace OHOS {
@@ -25,7 +26,7 @@ namespace Media {
 class CameraImpl : public Camera {
 public:
     CameraImpl() = delete;
-    CameraImpl(std::string &id, const CameraAbility *ability);
+    CameraImpl(std::string &id, const CameraAbility *ability, const CameraInfo *info);
     ~CameraImpl() = default;
 
     std::string GetCameraId() override;
@@ -40,8 +41,11 @@ public:
     int32_t TriggerSingleCapture(FrameConfig &frameConfig) override;
 
     const CameraAbility *GetAbility();
-    void OnCreate(CameraDevice *device);
+    const CameraInfo *GetInfo();
+    void OnCreate(std::string cameraId);
     void OnCreateFailed();
+    void OnFrameFinished(int32_t ret, FrameConfig &fc);
+    void OnConfigured(int32_t ret, CameraConfig &config);
     void RegistCb(CameraStateCallback &callback, EventHandler &handler);
 
 private:
@@ -51,7 +55,8 @@ private:
     CameraStateCallback *stateCb_ = nullptr;
     EventHandler *handler_ = nullptr;
     const CameraAbility *ability_ = nullptr;
-    CameraDevice *device_ = nullptr;
+    const CameraInfo *info_ = nullptr;
+    CameraDeviceClient *deviceClient_ = nullptr;
 };
 } // namespace Media
 } // namespace OHOS
