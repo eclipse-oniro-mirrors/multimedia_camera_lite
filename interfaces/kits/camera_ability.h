@@ -76,6 +76,20 @@ public:
     std::list<CameraPicSize> GetSupportedSizes(int format) const;
 
     /**
+     * @brief Obtains the supported autofocus (AF) modes.
+     *
+     * @return Returns the autofocus modes.
+     */
+    std::list<int32_t> GetSupportedAfModes() const;
+
+    /**
+     * @brief Obtains the supported auto exposure (AE) modes.
+     *
+     * @return Returns the auto exposure modes.
+     */
+    std::list<int32_t> GetSupportedAeModes() const;
+
+    /**
      * @brief Sets value ranges for a specified parameter.
      *
      * @param key Indicates the parameter key.
@@ -102,15 +116,18 @@ public:
         if (supportProperties_.find(key) != supportProperties_.end()) {
             return GetSupportParameterRange(key);
         }
+        return nullptr;
     }
 
 private:
     void SetSupportParameterRange(uint32_t key, std::list<CameraPicSize> &rangeList);
+    void SetSupportParameterRange(uint32_t key, std::list<int32_t> &rangeList);
     std::list<CameraPicSize> GetSupportParameterRange(uint32_t key) const;
     bool IsParameterSupport(uint32_t key) const;
-
     std::map<uint32_t, std::list<CameraPicSize>> SizeMap_;
     std::set<uint32_t> supportProperties_;
+    std::list<int32_t> afModes;
+    std::list<int32_t> aeModes;
 };
 } // namespace Media
 } // namespace OHOS

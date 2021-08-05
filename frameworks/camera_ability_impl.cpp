@@ -12,32 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "camera_ability.h"
+
+#include "camera_ability_impl.h"
 #include "media_log.h"
 
 using namespace std;
 namespace OHOS {
 namespace Media {
-CameraAbility::CameraAbility() {}
-CameraAbility::~CameraAbility() {}
 
-list<CameraPicSize> CameraAbility::GetSupportedSizes(int format) const
+list<int32_t> CameraAbilityImpl::GetSupportedFormats() const
 {
-    auto target = SizeMap_.find((uint32_t)format);
+//    auto target = SizeMap_.find(PARAM_KEY_SIZE);
+//    return target->second;
+    list<int32_t> test;
+    return test;
+}
+
+list<CameraPicSize> CameraAbilityImpl::GetSupportedSizes(int format) const
+{
+    auto target = SizeMap_.find(PARAM_KEY_SIZE);
     return target->second;
 }
 
-std::list<int32_t> CameraAbility::GetSupportedAfModes() const
-{
-    return afModes;
-}
-
-std::list<int32_t> CameraAbility::GetSupportedAeModes() const
-{
-    return aeModes;
-}
-
-list<CameraPicSize> CameraAbility::GetSupportParameterRange(uint32_t key) const
+list<CameraPicSize> CameraAbilityImpl::GetSupportParameterRange(uint32_t key) const
 {
     switch (key) {
         case PARAM_KEY_SIZE: {
@@ -51,31 +48,26 @@ list<CameraPicSize> CameraAbility::GetSupportParameterRange(uint32_t key) const
     }
 }
 
-void CameraAbility::SetSupportParameterRange(uint32_t key, list<CameraPicSize> &rangeList)
-{
-    SizeMap_[key] = rangeList;
-    supportProperties_.emplace(PARAM_KEY_SIZE);
-}
-
-void CameraAbility::SetSupportParameterRange(uint32_t key, list<int32_t> &rangeList)
+void CameraAbilityImpl::SetSupportParameterRange(uint32_t key, list<CameraPicSize> &rangeList)
 {
     switch (key) {
-        case CAM_AF_MODE:
+        case PARAM_KEY_SIZE:
             supportProperties_.emplace(key);
-            afModes = rangeList;
-            break;
-        case CAM_AE_MODE:
-            supportProperties_.emplace(key);
-            aeModes = rangeList;
+            SizeMap_[key] = rangeList;
             break;
         default:
             break;
     }
 }
 
-bool CameraAbility::IsParameterSupport(uint32_t key) const
+bool CameraAbilityImpl::IsParameterSupport(uint32_t key) const
 {
+    if (key != PARAM_KEY_SIZE) {
+        return false;
+    }
     return true;
 }
+
+
 } // namespace Media
 } // namespace OHOS

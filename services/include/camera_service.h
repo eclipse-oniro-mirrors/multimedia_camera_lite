@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
+ * Copyright(c) 2020 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http ://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,8 @@
 
 #include "camera_device.h"
 #include "camera_service_callback.h"
+#include "camera_ability.h"
+#include "camera_info_impl.h"
 
 namespace OHOS {
 namespace Media {
@@ -25,15 +27,19 @@ public:
     ~CameraService();
     static CameraService *GetInstance();
 
-    void Initialize(CameraServiceCallback *callback);
-    const CameraAbility *GetCameraAbility(std::string &cameraId);
-    void CreateCamera(std::string cameraId);
-
+    void Initialize();
+    CameraAbility *GetCameraAbility(std::string &cameraId);
+    CameraInfo *GetCameraInfo(std::string &cameraId);
+    CameraDevice *GetCameraDevice(std::string &cameraId);
+    int32_t CreateCamera(std::string cameraId);
+	int32_t CloseCamera(string cameraId);
+    list<string> GetCameraIdList();
 private:
     CameraService();
     int32_t InitCameraDevices();
-    CameraDevice *device_ = nullptr;
-    CameraAbility *ability_ = nullptr;
+	std::map<string, CameraDevice*> deviceMap_;	// pair(deviceId, device)
+	std::map<string, CameraAbility*> deviceAbilityMap_;	// pair(deviceId, ability)
+    std::map<string, CameraInfo*> deviceInfoMap_;	// pair(deviceId, info)
     CameraServiceCallback *cameraServiceCb_ = nullptr;
 };
 } // namespace Media

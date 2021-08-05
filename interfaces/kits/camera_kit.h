@@ -39,6 +39,7 @@
 #include <string>
 
 #include "camera_ability.h"
+#include "camera_info.h"
 #include "camera_device_callback.h"
 #include "camera_state_callback.h"
 #include "event_handler.h"
@@ -80,6 +81,14 @@ public:
      * @return Returns the <b>CameraAbility</b> object.
      */
     const CameraAbility *GetCameraAbility(std::string cameraId);
+
+    /**
+    * @brief Obtains the camera device info, including the camera type and facing type.
+    *
+    * @param cameraId Indicates the camera ID.
+    * @return Returns the <b>CameraInfo</b> object.
+    */
+    const CameraInfo *GetCameraInfo(std::string cameraId);
 
     /**
      * @brief Registers a camera callback for camera status changes

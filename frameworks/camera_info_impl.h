@@ -12,30 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef OHOS_CAMERA_SERVICE_CALLBACK_H
-#define OHOS_CAMERA_SERVICE_CALLBACK_H
+#ifndef OHOS_CAMERA_INFO_IMPL_H
+#define OHOS_CAMERA_INFO_IMPL_H
 
-#include <list>
-#include <string>
+#include "camera_info.h"
 
 namespace OHOS {
 namespace Media {
-class CameraServiceCallback {
+class CameraInfoImpl : public CameraInfo {
 public:
-    CameraServiceCallback() = default;
-    ~CameraServiceCallback() = default;
+    CameraInfoImpl() = delete;
+    ~CameraInfoImpl() = default;
+    CameraInfoImpl(int32_t cameraType, int32_t cameraFacingType);
 
-    enum CameraStauts {
-        CAMERA_STATUS_AVAIL,
-        CAMERA_STATUS_UNAVAIL,
-        CAMERA_STATUS_CREATED,
-        CAMERA_STATUS_CREATE_FAILED,
-        CAMERA_STATUS_CLOSE,
-    };
-    virtual void OnCameraServiceInitialized(std::list<std::string> &availCameraIdList) {}
-    virtual void OnCameraStatusChange(std::string &cameraId, CameraStauts status) {}
+    void SetCameraType(int32_t cameraType);
+    int32_t GetCameraType() const override;
+    void SetCameraFacingType(int32_t cameraFacingType);
+    int32_t GetCameraFacingType() const override;
+
+private:
+    int32_t cameraType;
+    int32_t cameraFacingType;
 };
 } // namespace Media
 } // namespace OHOS
 
-#endif // OHOS_CAMERA_SERVICE_CALLBACK_H
+
+#endif // OHOS_CAMERA_INFO_IMPL_H

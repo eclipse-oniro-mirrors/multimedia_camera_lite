@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
+ * Copyright(c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http ://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@
 #include <string>
 
 #include "camera_ability.h"
+#include "camera_info.h"
 #include "camera_device_callback.h"
 #include "camera_state_callback.h"
 #include "event_handler.h"
@@ -28,6 +29,7 @@ namespace Media {
 class CameraManager {
 public:
     ~CameraManager() = default;
+
     static CameraManager *GetInstance();
 
     virtual std::list<std::string> GetCameraIds()
@@ -39,10 +41,16 @@ public:
     {
         return nullptr;
     }
+
+    virtual const CameraInfo *GetCameraInfo(const std::string &cameraId)
+    {
+        return nullptr;
+    }
+
     virtual void RegisterCameraDeviceCallback(CameraDeviceCallback &callback, EventHandler &handler) {}
+
     virtual void UnregisterCameraDeviceCallback(CameraDeviceCallback &callback) {}
     virtual void CreateCamera(const std::string &cameraId, CameraStateCallback &callback, EventHandler &handler) {}
-
 protected:
     CameraManager() {}
 };
