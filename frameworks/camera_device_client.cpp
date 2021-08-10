@@ -94,7 +94,10 @@ int32_t CameraDeviceClient::SetCameraConfig(CameraConfig &cc)
     IpcIoPushString(&io, cameraId_.c_str());
     para_->data = this;
     para_->cameraConfig = &cc;
-    uint32_t ret = proxy_->Invoke(proxy_, CAEMRA_SERVER_SET_CAMERA_CONFIG, &io, NULL, NULL);
+    CallBackPara para = {};
+    para.funcId = CAEMRA_SERVER_SET_CAMERA_CONFIG;
+    para.data = this;
+    uint32_t ret = proxy_->Invoke(proxy_, CAEMRA_SERVER_SET_CAMERA_CONFIG, &io, &para, Callback);
     if (ret != 0) {
         MEDIA_ERR_LOG("Set camera config ipc transmission failed. (ret=%d)", ret);
         return MEDIA_ERR;
@@ -155,7 +158,10 @@ int32_t CameraDeviceClient::TriggerLoopingCapture(FrameConfig &fc)
         return MEDIA_ERR;
     }
     para_->data = this;
-    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_TRIGGER_LOOPING_CAPTURE, &io, NULL, NULL);
+    CallBackPara para = {};
+    para.funcId = CAMERA_SERVER_TRIGGER_LOOPING_CAPTURE;
+    para.data = this;
+    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_TRIGGER_LOOPING_CAPTURE, &io, &para, Callback);
     if (ret != 0) {
         MEDIA_ERR_LOG("Trigger looping capture ipc  transmission failed. (ret=%d)", ret);
     }
@@ -180,7 +186,10 @@ int32_t CameraDeviceClient::TriggerSingleCapture(FrameConfig &fc)
     }
     para_->frameConfig = &fc;
     para_->data = this;
-    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_TRIGGER_SINGLE_CAPTURE, &io, NULL, NULL);
+    CallBackPara para = {};
+    para.funcId = CAMERA_SERVER_TRIGGER_SINGLE_CAPTURE;
+    para.data = this;
+    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_TRIGGER_SINGLE_CAPTURE, &io, &para, Callback);
     if (ret != 0) {
         MEDIA_ERR_LOG("Trigger single capture ipc  transmission failed. (ret=%d)", ret);
         return MEDIA_ERR;
@@ -202,7 +211,7 @@ void CameraDeviceClient::StopLoopingCapture()
     CallBackPara para = {};
     para.funcId = CAMERA_SERVER_STOP_LOOPING_CAPTURE;
     para.data = this;
-    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_STOP_LOOPING_CAPTURE, &io, NULL, NULL);
+    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_STOP_LOOPING_CAPTURE, &io, &para, Callback);
     if (ret != 0) {
         MEDIA_ERR_LOG("Stop Looping capture ipc  transmission failed. (ret=%d)", ret);
     }
@@ -221,7 +230,9 @@ void CameraDeviceClient::Release()
         return;
     }
     IpcIoPushString(&io, cameraId_.c_str());
-    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_CLOSE_CAMERA, &io,  NULL, NULL);
+    CallBackPara para = {};
+    para.funcId = CAMERA_SERVER_CLOSE_CAMERA;
+    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_CLOSE_CAMERA, &io,  &para, Callback);
     if (ret != 0) {
         MEDIA_ERR_LOG("Stop Looping capture ipc  transmission failed. (ret=%d)", ret);
     }

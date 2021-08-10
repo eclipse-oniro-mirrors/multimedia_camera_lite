@@ -509,7 +509,7 @@ int32_t CaptureAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     Surface *surface = surfaceList.front();
 
     StreamAttr stream;
-    StreamAttrInitialize(&stream, surface, STREAM_PREVIEW, FORMAT_YVU420);
+    StreamAttrInitialize(&stream, surface, STREAM_CAPTURE, FORMAT_YVU420);
 
     uint32_t deviceId;
     HalCameraStreamCreate(cameraId_, &stream, streamId);
@@ -582,6 +582,8 @@ int32_t CaptureAssistant::Start(uint32_t streamId)
 
     CodecStop(vencHdl_);
     CodecDestroy(vencHdl_);
+    HalCameraStreamOff(cameraId_, streamId);
+    HalCameraStreamDestroy(cameraId_, streamId);
     state_ = LOOP_STOP;
 
     return ret;
