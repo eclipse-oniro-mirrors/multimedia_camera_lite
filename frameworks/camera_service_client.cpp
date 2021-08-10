@@ -259,7 +259,7 @@ void CameraServiceClient::CreateCamera(string cameraId)
     IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 1);
     IpcIoPushString(&io, cameraId.c_str());
     IpcIoPushSvc(&io, &sid_);
-    uint32_t ans = proxy_->Invoke(proxy_, CAMERA_SERVER_CREATE_CAMERA, &io, NULL, NULL);
+    uint32_t ans = proxy_->Invoke(proxy_, CAMERA_SERVER_CREATE_CAMERA, &io, para_, Callback);
     if (ans != 0) {
         MEDIA_ERR_LOG("Create camera ipc  transmission failed. (ret=%d)", ans);
     }
