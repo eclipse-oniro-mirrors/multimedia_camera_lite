@@ -51,6 +51,8 @@ bool g_onFrameFinishedFlag;
 bool g_onFrameErrorFlag;
 bool g_onFrameProgressedFlag;
 bool g_onFrameStartedFlag;
+bool g_onRecorderFlag;
+bool g_onPreviewFlag;
 
 // VideoSize
 enum TestVideoSize {
