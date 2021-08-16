@@ -1,4 +1,12 @@
 /*
+ * @Author: your name
+ * @Date: 2021-08-16 11:33:08
+ * @LastEditTime: 2021-08-16 12:08:30
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \multimedia_camera_lite\interfaces\kits\camera_info.h
+ */
+/*
  * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +49,6 @@
 
 namespace OHOS {
 namespace Media {
-
 typedef enum {
     /* Wide angle camera */
     WIDE_ANGLE,
@@ -96,7 +103,6 @@ public:
         return -1;
     }
 };
-
 }
 }
 #endif // OHOS_CAMERA_INFO_H

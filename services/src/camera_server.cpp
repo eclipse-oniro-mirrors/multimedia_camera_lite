@@ -55,7 +55,7 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
         case CAEMRA_SERVER_SET_CAMERA_CONFIG:
             CameraServer::GetInstance()->SetCameraConfig(req, reply);
             break;
-		case CAEMRA_SERVER_SET_FRAME_CONFIG:
+        case CAEMRA_SERVER_SET_FRAME_CONFIG:
             CameraServer::GetInstance()->SetFrameConfig(req, reply);
             break;
         case CAMERA_SERVER_TRIGGER_LOOPING_CAPTURE:
@@ -86,10 +86,10 @@ void CameraServer::GetCameraAbility(IpcIo *req, IpcIo *reply)
     size_t sz;
     string cameraId((const char*)(IpcIoPopString(req, &sz)));
     CameraAbility *ability = CameraService::GetInstance()->GetCameraAbility(cameraId);
-	if (ability == nullptr) {
-		return;
-	}
-	list<CameraPicSize> supportSizeList = ability->GetSupportedSizes(PARAM_KEY_SIZE);
+    if (ability == nullptr) {
+        return;
+    }
+    list<CameraPicSize> supportSizeList = ability->GetSupportedSizes(PARAM_KEY_SIZE);
     uint32_t supportProperties = 0;
     IpcIoPushUint32(reply, supportProperties);
     uint32_t listSize = supportSizeList.size();
@@ -127,11 +127,11 @@ void CameraServer::GetCameraInfo(IpcIo *req, IpcIo *reply)
 
 void CameraServer::GetCameraIdList(IpcIo *req, IpcIo *reply)
 {
-	list<string> cameraIdList = CameraService::GetInstance()->GetCameraIdList();
-	IpcIoPushUint32(reply, cameraIdList.size());
-	for (string cameraId : cameraIdList) {
-		IpcIoPushString(reply, cameraId.c_str());
-	}
+    list<string> cameraIdList = CameraService::GetInstance()->GetCameraIdList();
+    IpcIoPushUint32(reply, cameraIdList.size());
+    for (string cameraId : cameraIdList) {
+        IpcIoPushString(reply, cameraId.c_str());
+    }
 }
 
 void CameraServer::CreateCamera(IpcIo *req, IpcIo *reply)
@@ -218,22 +218,21 @@ FrameConfig *DeserializeFrameConfig(IpcIo &io)
     }
     uint8_t *data = (uint8_t *)dataBuff->buff;
     fc->SetVendorParameter((uint8_t *)dataBuff->buff, dataBuff->buffSz);
-    MEDIA_INFO_LOG("dataBuff is %d-%d-%d-%d", data[0], data[1], data[30], data[31]);
     return fc;
 }
 
 void CameraServer::SetFrameConfig(IpcIo *req, IpcIo *reply)
 {
-	size_t sz;
-	string cameraId((const char*)(IpcIoPopString(req, &sz)));
-	int32_t streamId = IpcIoPopInt32(req);
-	MEDIA_ERR_LOG("SetFrameConfig streamId(%d).", streamId);
-	CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
-	FrameConfig *fc = DeserializeFrameConfig(*req);
-	if (fc == nullptr) {
-		MEDIA_ERR_LOG("Deserialize frame config failed.");
-		return;
-	}
+    size_t sz;
+    string cameraId((const char *)(IpcIoPopString(req, &sz)));
+    int32_t streamId = IpcIoPopInt32(req);
+    MEDIA_ERR_LOG("SetFrameConfig streamId(%d).", streamId);
+    CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    FrameConfig *fc = DeserializeFrameConfig(*req);
+    if (fc == nullptr) {
+        MEDIA_ERR_LOG("Deserialize frame config failed.");
+        return;
+    }
     delete fc;
 }
 
@@ -250,21 +249,21 @@ void CameraServer::TriggerLoopingCapture(IpcIo *req, IpcIo *reply)
     }
     uint32_t streamId = 0;
     int32_t loopingCaptureStatus = device_->TriggerLoopingCapture(*fc, &streamId);
-	OnTriggerLoopingCaptureFinished(loopingCaptureStatus, streamId);
-	delete fc;
+    OnTriggerLoopingCaptureFinished(loopingCaptureStatus, streamId);
+    delete fc;
 }
 
-void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply)
+void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply) 
 {
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    string cameraId((const char *)(IpcIoPopString(req, &sz)));
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
     FrameConfig *fc = DeserializeFrameConfig(*req);
     if (fc == nullptr) {
         MEDIA_ERR_LOG("Deserialize frame config failed.");
         return;
     }
-	uint32_t streamId = 0;
+    uint32_t streamId = 0;
     int32_t singleCaptureStatus = device_->TriggerSingleCapture(*fc, &streamId);
     OnTriggerSingleCaptureFinished(singleCaptureStatus);
     delete fc;
@@ -274,11 +273,11 @@ void CameraServer::StopLoopingCapture(IpcIo *req, IpcIo *reply)
 {
     MEDIA_INFO_LOG("StopLoopingCapture in camera_server.cpp!");
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    string cameraId((const char *)(IpcIoPopString(req, &sz)));
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
-	if (device_ == nullptr) {
+    if (device_ == nullptr) {
         MEDIA_INFO_LOG("device_ is  null in camera_server.cpp!");
-	}
+    }
     device_->StopLoopingCapture();
 }
 
@@ -335,4 +334,3 @@ void CameraServer::OnCameraConfigured(int32_t ret)
 }
 } // namespace Media
 } // namespace OHOS
-

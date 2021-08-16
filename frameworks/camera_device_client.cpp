@@ -121,7 +121,7 @@ int32_t SerilizeFrameConfig(IpcIo &io, FrameConfig &fc, uint32_t maxSurfaceNum)
     int32_t qfactor = -1;
     fc.GetParameter(PARAM_KEY_IMAGE_ENCODE_QFACTOR, qfactor);
     IpcIoPushInt32(&io, qfactor);
-	// FPS, format, private Tag
+
     int32_t frameRate = -1;
     fc.GetParameter(PARAM_KEY_STREAM_FPS, frameRate);
     IpcIoPushInt32(&io, frameRate);

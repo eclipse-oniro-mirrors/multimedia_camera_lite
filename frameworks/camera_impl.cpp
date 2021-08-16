@@ -85,7 +85,7 @@ void CameraImpl::Release()
         return;
     }
     deviceClient_->Release();
-    if (handler_== nullptr) {
+    if (handler_ == nullptr) {
         return;
     }
     handler_->Post([this] { this->stateCb_->OnReleased(*this); });

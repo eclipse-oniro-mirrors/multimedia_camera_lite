@@ -1,4 +1,12 @@
 /*
+ * @Author: your name
+ * @Date: 2021-08-16 11:33:19
+ * @LastEditTime: 2021-08-16 12:02:46
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \multimedia_camera_lite\frameworks\frame_config.cpp
+ */
+/*
  * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +77,7 @@ void FrameConfig::GetVendorParameter(uint8_t *value, uint32_t len)
         MEDIA_ERR_LOG("value is a nullptr");
         return;
     }
-    uint32_t realLength = len > PRIVATE_TAG_LEN ? PRIVATE_TAG_LEN : len;
+    uint32_t realLength = (len > PRIVATE_TAG_LEN) ? PRIVATE_TAG_LEN : len;
     errno_t ret = memcpy_s(value, realLength, privateTag_, realLength);
     if (ret != EOK) {
         MEDIA_ERR_LOG("memcpy failed when get private tag, ret(%d)", ret);
@@ -84,7 +92,7 @@ void FrameConfig::SetValue(uint32_t key, const void *value)
     }
     switch (key) {
         case PARAM_KEY_IMAGE_ENCODE_QFACTOR:
-		case PARAM_KEY_STREAM_FPS:
+        case PARAM_KEY_STREAM_FPS:
         case CAM_IMAGE_FORMAT:
             keyMap_[key] = *(static_cast<const int32_t *>(value));
             break;

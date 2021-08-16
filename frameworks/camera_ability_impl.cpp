@@ -1,4 +1,12 @@
 /*
+ * @Author: your name
+ * @Date: 2021-08-16 11:33:16
+ * @LastEditTime: 2021-08-16 11:49:35
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \multimedia_camera_lite\frameworks\camera_ability_impl.cpp
+ */
+/*
  * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +27,8 @@
 using namespace std;
 namespace OHOS {
 namespace Media {
-
 list<int32_t> CameraAbilityImpl::GetSupportedFormats() const
 {
-//    auto target = SizeMap_.find(PARAM_KEY_SIZE);
-//    return target->second;
     list<int32_t> test;
     return test;
 }
@@ -67,7 +72,5 @@ bool CameraAbilityImpl::IsParameterSupport(uint32_t key) const
     }
     return true;
 }
-
-
 } // namespace Media
 } // namespace OHOS

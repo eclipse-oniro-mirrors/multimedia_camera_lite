@@ -1,4 +1,12 @@
 /*
+ * @Author: your name
+ * @Date: 2021-08-16 11:33:21
+ * @LastEditTime: 2021-08-16 12:06:56
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \multimedia_camera_lite\services\include\camera_server.h
+ */
+/*
  * Copyright(c) 2020 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +43,7 @@ public:
     void CreateCamera(IpcIo *req, IpcIo *reply);
     void CloseCamera(IpcIo *req, IpcIo *reply);
     void SetCameraConfig(IpcIo *req, IpcIo *reply);
-	void SetFrameConfig(IpcIo *req, IpcIo *reply);
+    void SetFrameConfig(IpcIo *req, IpcIo *reply);
     void TriggerLoopingCapture(IpcIo *req, IpcIo *reply);
     void StopLoopingCapture(IpcIo *req, IpcIo *reply);
     void TriggerSingleCapture(IpcIo *req, IpcIo *reply);
