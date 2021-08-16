@@ -32,14 +32,14 @@ public:
     CameraInfo *GetCameraInfo(std::string &cameraId);
     CameraDevice *GetCameraDevice(std::string &cameraId);
     int32_t CreateCamera(std::string cameraId);
-	int32_t CloseCamera(string cameraId);
+    int32_t CloseCamera(string cameraId);
     list<string> GetCameraIdList();
 private:
     CameraService();
     int32_t InitCameraDevices();
-	std::map<string, CameraDevice*> deviceMap_;	// pair(deviceId, device)
-	std::map<string, CameraAbility*> deviceAbilityMap_;	// pair(deviceId, ability)
-    std::map<string, CameraInfo*> deviceInfoMap_;	// pair(deviceId, info)
+    std::map<string, CameraDevice*> deviceMap_;
+    std::map<string, CameraAbility*> deviceAbilityMap_;
+    std::map<string, CameraInfo*> deviceInfoMap_;
     CameraServiceCallback *cameraServiceCb_ = nullptr;
 };
 } // namespace Media

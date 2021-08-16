@@ -69,7 +69,7 @@ void FrameConfig::GetVendorParameter(uint8_t *value, uint32_t len)
         MEDIA_ERR_LOG("value is a nullptr");
         return;
     }
-    uint32_t realLength = len > PRIVATE_TAG_LEN ? PRIVATE_TAG_LEN : len;
+    uint32_t realLength = (len > PRIVATE_TAG_LEN) ? PRIVATE_TAG_LEN : len;
     errno_t ret = memcpy_s(value, realLength, privateTag_, realLength);
     if (ret != EOK) {
         MEDIA_ERR_LOG("memcpy failed when get private tag, ret(%d)", ret);
@@ -84,7 +84,7 @@ void FrameConfig::SetValue(uint32_t key, const void *value)
     }
     switch (key) {
         case PARAM_KEY_IMAGE_ENCODE_QFACTOR:
-		case PARAM_KEY_STREAM_FPS:
+        case PARAM_KEY_STREAM_FPS:
         case CAM_IMAGE_FORMAT:
             keyMap_[key] = *(static_cast<const int32_t *>(value));
             break;

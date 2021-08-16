@@ -97,7 +97,8 @@ int CameraServiceClient::Callback(void* owner, int code, IpcIo *reply)
                 cameraAbility->SetParameterRange(CAM_IMAGE_YUV420, supportSizeList);
                 cameraAbility->SetParameterRange(CAM_AF_MODE, afModeList);
                 cameraAbility->SetParameterRange(CAM_AE_MODE, aeModeList);
-                client->deviceAbilityMap_.insert(pair<string, CameraAbility*>(client->cameraIdForAbility, cameraAbility));
+                client->deviceAbilityMap_.insert(
+                    pair<string, CameraAbility *>(client->cameraIdForAbility, cameraAbility));
             } else {
                 MEDIA_ERR_LOG("Callback : cameraAbility construct failed.");
             }

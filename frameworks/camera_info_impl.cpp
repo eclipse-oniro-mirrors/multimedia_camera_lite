@@ -18,7 +18,6 @@
 using namespace std;
 namespace OHOS {
 namespace Media {
-
 CameraInfoImpl::CameraInfoImpl(int32_t cameraType, int32_t cameraFacingType)
 {
     this->cameraType = cameraType;
@@ -45,6 +44,5 @@ void CameraInfoImpl::SetCameraFacingType(int32_t cameraFacingType)
     this->cameraFacingType = cameraFacingType;
     return;
 }
-
 } // namespace Media
 } // namespace OHOS

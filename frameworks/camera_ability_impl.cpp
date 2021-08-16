@@ -19,11 +19,8 @@
 using namespace std;
 namespace OHOS {
 namespace Media {
-
 list<int32_t> CameraAbilityImpl::GetSupportedFormats() const
 {
-//    auto target = SizeMap_.find(PARAM_KEY_SIZE);
-//    return target->second;
     list<int32_t> test;
     return test;
 }
@@ -67,7 +64,5 @@ bool CameraAbilityImpl::IsParameterSupport(uint32_t key) const
     }
     return true;
 }
-
-
 } // namespace Media
 } // namespace OHOS

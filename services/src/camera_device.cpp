@@ -50,7 +50,6 @@ const int32_t IMAGE_SIZE = 5;       // "DATA_PIX_FORMAT"
 
 namespace OHOS {
 namespace Media {
-
 extern Surface *g_surface;
 inline PicSize Convert2CodecSize(int32_t width, int32_t height)
 {
@@ -126,7 +125,6 @@ static int32_t CameraCreateVideoEnc(FrameConfig &fc,
     param[paramIndex].size = sizeof(Profile);
     paramIndex++;
 
-
     auto surfaceList = fc.GetSurfaces();
 #ifdef __LINUX__
     Surface *surface = g_surface;
@@ -182,10 +180,10 @@ static int32_t CameraCreateJpegEnc(FrameConfig &fc, uint32_t srcDev, CODEC_HANDL
     param[paramIndex].size = sizeof(AvCodecMime);
     paramIndex++;
 
-	auto surfaceList = fc.GetSurfaces();
-	Surface *surface = surfaceList.front();
+    auto surfaceList = fc.GetSurfaces();
+    Surface *surface = surfaceList.front();
 
-	std::cout<<"------2: CameraCreateJpegEnc: surface width and height: "<<surface->GetWidth()<<", "<<surface->GetHeight()<<std::endl;
+    std::cout<<"------2: CameraCreateJpegEnc: surface width and height: "<<surface->GetWidth()<<", "<<surface->GetHeight()<<std::endl;
     PicSize picSize = Convert2CodecSize(surface->GetWidth(), surface->GetHeight());
     param[paramIndex].key = KEY_VIDEO_PIC_SIZE;
     param[paramIndex].val = &picSize;
@@ -246,7 +244,8 @@ static void StreamAttrInitialize(StreamAttr *streamAttr, Surface *surface,
     streamAttr->format = streamFormat;
     streamAttr->width = surface->GetWidth();
     streamAttr->height = surface->GetHeight();
-    streamAttr->fps = 30;
+    int fps = 30;
+    streamAttr->fps = fps;
 }
 
 static ImageFormat Convert2HalImageFormat(uint32_t format)
@@ -356,8 +355,6 @@ int32_t RecordAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
         streamInfo.type = STERAM_INFO_PRIVATE;
         fc.GetVendorParameter(streamInfo.u.data, PRIVATE_TAG_LEN);
         HalCameraStreamSetInfo(cameraId_, *streamId, &streamInfo);
-        MEDIA_INFO_LOG("dataBuff is %d-%d-%d-%d", streamInfo.u.data[0], streamInfo.u.data[1],
-            streamInfo.u.data[30], streamInfo.u.data[31]);
 
         uint32_t deviceId;
         HalCameraGetDeviceId(cameraId_, *streamId, &deviceId);
@@ -389,7 +386,7 @@ int32_t RecordAssistant::Start(uint32_t streamId)
     if (state_ != LOOP_READY) {
         return MEDIA_ERR;
     }
-	HalCameraStreamOn(cameraId_, streamId);
+    HalCameraStreamOn(cameraId_, streamId);
     int32_t ret = MEDIA_OK;
     int32_t i;
     for (i = 0; static_cast<uint32_t>(i) < vencHdls_.size(); i++) {
@@ -453,7 +450,7 @@ int32_t PreviewAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     Surface *surface = surfaceList.front();
     StreamAttr stream;
     StreamAttrInitialize(&stream, surface, STREAM_PREVIEW, FORMAT_YVU420);
-	HalCameraStreamCreate(cameraId_, &stream, streamId);
+    HalCameraStreamCreate(cameraId_, &stream, streamId);
     StreamInfo streamInfo;
     streamInfo.type = STREAM_INFO_POS;
     streamInfo.u.pos.x = std::stoi(surface->GetUserData(string("region_position_x")));
@@ -476,7 +473,7 @@ int32_t PreviewAssistant::Start(uint32_t streamId)
         MEDIA_ERR_LOG("fork thread YuvCopyProcess failed: %d.", retCode);
     }
 
-	HalCameraStreamOn(cameraId_, streamId);
+    HalCameraStreamOn(cameraId_, streamId);
     return MEDIA_OK;
 }
 
@@ -619,7 +616,7 @@ int32_t CallbackAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
 
 int32_t CallbackAssistant::Start(uint32_t streamId)
 {
-	if (state_ == LOOP_LOOPING) {
+    if (state_ == LOOP_LOOPING) {
         return MEDIA_ERR;
     }
     state_ = LOOP_LOOPING;
@@ -686,7 +683,7 @@ void* CallbackAssistant::StreamCopyProcess(void *arg)
 
 int32_t CallbackAssistant::Stop()
 {
-    MEDIA_DEBUG_LOG("CallbackAssistant£ºNo support method.");
+    MEDIA_DEBUG_LOG("CallbackAssistantNo support method.");
     state_ = LOOP_STOP;
     pthread_join(threadId, NULL);
     HalCameraStreamOff(cameraId_, streamId_);
@@ -704,9 +701,8 @@ CameraDevice::~CameraDevice() {}
 
 int32_t CameraDevice::Initialize()
 {
-    /* Need to be Refactored when delete config file */
-    int32_t ret;
-    ret = CodecInit();
+    // Need to be Refactored when delete config file
+    int32_t ret = CodecInit();
     if (ret != 0) {
         MEDIA_ERR_LOG("Codec module init failed.(ret=%d)", ret);
         return MEDIA_ERR;
@@ -715,7 +711,7 @@ int32_t CameraDevice::Initialize()
     captureAssistant_.state_ = LOOP_READY;
     previewAssistant_.state_ = LOOP_READY;
     recordAssistant_.state_ = LOOP_READY;
-	callbackAssistant_.state_ = LOOP_READY;
+    callbackAssistant_.state_ = LOOP_READY;
     captureAssistant_.cameraId_ = cameraId;
     previewAssistant_.cameraId_ = cameraId;
     recordAssistant_.cameraId_ = cameraId;
@@ -743,7 +739,7 @@ int32_t CameraDevice::TriggerLoopingCapture(FrameConfig &fc, uint32_t *streamId)
         case FRAME_CONFIG_CAPTURE:
             assistant = &captureAssistant_;
             break;
-		case FRAME_CONFIG_CALLBACK:
+        case FRAME_CONFIG_CALLBACK:
             assistant = &callbackAssistant_;
             break;
         default:

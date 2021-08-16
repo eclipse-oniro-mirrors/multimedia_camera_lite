@@ -41,7 +41,6 @@
 
 namespace OHOS {
 namespace Media {
-
 typedef enum {
     /* Wide angle camera */
     WIDE_ANGLE,
@@ -96,7 +95,6 @@ public:
         return -1;
     }
 };
-
 }
 }
 #endif // OHOS_CAMERA_INFO_H

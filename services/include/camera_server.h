@@ -35,7 +35,7 @@ public:
     void CreateCamera(IpcIo *req, IpcIo *reply);
     void CloseCamera(IpcIo *req, IpcIo *reply);
     void SetCameraConfig(IpcIo *req, IpcIo *reply);
-	void SetFrameConfig(IpcIo *req, IpcIo *reply);
+    void SetFrameConfig(IpcIo *req, IpcIo *reply);
     void TriggerLoopingCapture(IpcIo *req, IpcIo *reply);
     void StopLoopingCapture(IpcIo *req, IpcIo *reply);
     void TriggerSingleCapture(IpcIo *req, IpcIo *reply);
