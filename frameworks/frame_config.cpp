@@ -1,12 +1,4 @@
 /*
- * @Author: your name
- * @Date: 2021-08-16 11:33:19
- * @LastEditTime: 2021-08-16 12:02:46
- * @LastEditors: Please set LastEditors
- * @Description: In User Settings Edit
- * @FilePath: \multimedia_camera_lite\frameworks\frame_config.cpp
- */
-/*
  * Copyright (c) 2020-2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
