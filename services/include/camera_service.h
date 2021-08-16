@@ -1,12 +1,4 @@
 /*
- * @Author: your name
- * @Date: 2021-08-16 11:31:39
- * @LastEditTime: 2021-08-16 12:07:26
- * @LastEditors: Please set LastEditors
- * @Description: In User Settings Edit
- * @FilePath: \multimedia_camera_lite\services\include\camera_service.h
- */
-/*
  * Copyright(c) 2020 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
