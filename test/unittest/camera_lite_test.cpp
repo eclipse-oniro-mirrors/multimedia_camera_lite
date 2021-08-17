@@ -15,16 +15,18 @@
 
 #include "camera_lite_test.h"
 
+#include <components/ui_surface_view.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
+#include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
-#include <cstdlib>
-#include <algorithm>
 
 #include "camera_kit.h"
 
@@ -72,15 +74,18 @@ void CameraLiteTest::SetUp(void)
     g_onGetCameraAbilityFlag = false;
     g_onConfigureFlag = false;
     g_onGetSupportedSizesFlag = false;
+
     // CameraDeviceCallBack
     g_onCameraAvailableFlag = false;
     g_onCameraUnavailableFlag = false;
+
     // CameraStateCallback
     g_onCreatedFlag = false;
     g_onCreateFailedFlag = false;
     g_onConfiguredFlag = false;
     g_onConfigureFailedFlag = false;
     g_onReleasedFlag = false;
+
     // FrameStateCallback
     g_onCaptureTriggerAbortedFlag = false;
     g_onCaptureTriggerCompletedFlag = false;
@@ -90,18 +95,16 @@ void CameraLiteTest::SetUp(void)
     g_onFrameErrorFlag = false;
     g_onFrameProgressedFlag = false;
     g_onFrameStartedFlag = false;
+    g_onRecorderFlag = false;
     cout << "SetUp" << endl;
 }
 
 // Tear down
-void CameraLiteTest::TearDown(void)
-{
-    cout << "TearDown." << endl;
-}
+void CameraLiteTest::TearDown(void) { cout << "TearDown." << endl; }
 
 int32_t SetupAudioSource(const Recorder &rec)
 {
-    Recorder *recorder = (Recorder*) &rec;
+    Recorder *recorder = (Recorder *)&rec;
     int32_t ret = SUCCESS;
     int32_t audioSourceId = 0;
     AudioCodecFormat audioFormat = AAC_LC;
@@ -109,7 +112,6 @@ int32_t SetupAudioSource(const Recorder &rec)
     int32_t sampleRate = 48000;
     int32_t channelCount = 1;
     int32_t audioEncodingBitRate = sampleRate;
-
     if ((ret = recorder->SetAudioSource(inputSource, audioSourceId)) != SUCCESS) {
         cout << "SetAudioSource failed." << ret << endl;
         return FAIL;
@@ -130,14 +132,13 @@ int32_t SetupAudioSource(const Recorder &rec)
         cout << "SetAudioEncodingBitRate failed." << ret << endl;
         return FAIL;
     }
-
     return SUCCESS;
 }
 
 /* *
  * creat Recorder
  */
-Recorder* SampleCreateRecorder()
+Recorder *SampleCreateRecorder()
 {
     int ret = 0;
     VideoSourceType source = VIDEO_SOURCE_SURFACE_ES;
@@ -178,12 +179,10 @@ Recorder* SampleCreateRecorder()
         delete recorder;
         return nullptr;
     }
-
     if ((ret = SetupAudioSource(*recorder) != SUCCESS)) {
         delete recorder;
         return nullptr;
     }
-
     return recorder;
 }
 
@@ -193,7 +192,8 @@ Recorder* SampleCreateRecorder()
 class SampleFrameStateCallback : public FrameStateCallback {
     /* *
      * check file exist
-     * @param filename filename
+     *
+     * @param filename the filename
      * @return  check result
      */
     int32_t FileCheck(const string &filename)
@@ -211,10 +211,14 @@ class SampleFrameStateCallback : public FrameStateCallback {
     }
 
     /* *
-    * Save Capture
-    * @return
-    */
-    int32_t SampleSaveCapture(string testPath, char *p, uint32_t size)
+     * Save Capture
+     *
+     * @param testPath the file path
+     * @param buffer the buffer
+     * @param size the size
+     * @return save result
+     */
+    int32_t SampleSaveCapture(string testPath, char *buffer, uint32_t size)
     {
         cout << "Start saving picture" << endl;
         string filePath = "";
@@ -228,7 +232,7 @@ class SampleFrameStateCallback : public FrameStateCallback {
             filePath = testPath + ss.str();
             ofstream pic(testPath + ss.str(), ofstream::out | ofstream::trunc);
             cout << "write " << size << " bytes" << endl;
-            pic.write(p, size);
+            pic.write(buffer, size);
             cout << "Saving picture end" << endl;
         }
         const char *filename = filePath.data();
@@ -301,8 +305,8 @@ public:
     void OnCreateFailed(const std::string cameraId, int32_t errorCode) override
     {
         g_onCreateFailedFlag = true;
-        cout << "Camera  ID: " <<  cameraId << endl;
-        cout << "Sample recv OnCreateFailed camera.: " <<  errorCode << endl;
+        cout << "Camera  ID: " << cameraId << endl;
+        cout << "Sample recv OnCreateFailed camera.: " << errorCode << endl;
     }
 
     void OnReleased(Camera &c) override
@@ -314,13 +318,14 @@ public:
     void StartRecord()
     {
         int ret;
-        if (isRecording) {
+        if (isRecording_) {
             cout << "Camera is already recording." << endl;
             return;
         }
-        if (recorder_ == nullptr) {
-            recorder_ = SampleCreateRecorder();
+        if (recorder_ != nullptr) {
+            cout << "Recorder is not null" << endl;
         }
+        recorder_ = SampleCreateRecorder();
         if (recorder_ == nullptr) {
             cout << "Recorder not available" << endl;
             return;
@@ -337,7 +342,7 @@ public:
             cout << "Prepare failed.=" << ret << endl;
             return;
         }
-        Surface *surface = (recorder_->GetSurface(0)).get();
+        auto surface = recorder_->GetSurface(0);
         surface->SetWidthAndHeight(WIDTH, HEIGHT);
         surface->SetQueueSize(QUEUE_SIZE);
         surface->SetSize(BUFFER_SIZE * BUFFER_SIZE);
@@ -362,29 +367,29 @@ public:
             cout << "camera start recording failed. ret=" << ret << endl;
             return;
         }
-        isRecording = true;
+        isRecording_ = true;
+        g_onRecorderFlag = true;
         cout << "camera start recording succeed." << endl;
     }
 
     void StartPreview()
     {
-        if (isPreviewing) {
+        if (isPreviewing_) {
             cout << "Camera is already previewing." << endl;
             return;
         }
         FrameConfig *fc = new FrameConfig(FRAME_CONFIG_PREVIEW);
-        Surface *surface = Surface::CreateSurface();
+        UISurfaceView *surface = new UISurfaceView();
+        int width = 960;
+        int height = 480;
+        surface->SetPosition(0, 0, width, height);
+        surface->GetSurface()->SetWidthAndHeight(WIDTH, HEIGHT);
         if (surface == nullptr) {
             cout << "CreateSurface failed" << endl;
             delete fc;
             return;
         }
-        surface->SetWidthAndHeight(WIDTH, HEIGHT);
-        surface->SetUserData("region_position_x", "0");
-        surface->SetUserData("region_position_y", "0");
-        surface->SetUserData("region_width", "480");
-        surface->SetUserData("region_height", "480");
-        fc->AddSurface(*surface);
+        fc->AddSurface(*(surface->GetSurface()));
         static int cnt = 3;
         while (cam_ == nullptr) {
             if (cnt-- < 0)
@@ -398,9 +403,8 @@ public:
             delete fc;
             return;
         }
-        g_onCaptureTriggerCompletedFlag = true;
-        delete surface;
-        isPreviewing = true;
+        isPreviewing_ = true;
+        g_onPreviewFlag = true;
         cout << "camera start preview succeed." << endl;
     }
 
@@ -413,7 +417,7 @@ public:
             delete fc;
             return;
         }
-        surface->SetWidthAndHeight(1920, 1080); /* 1920:width,1080:height */
+        surface->SetWidthAndHeight(WIDTH, HEIGHT);
         fc->AddSurface(*surface);
         static int cnt = 3;
         while (cam_ == nullptr) {
@@ -430,7 +434,10 @@ public:
     void Stop()
     {
         if (recorder_ != nullptr) {
-            recorder_->Stop(false);
+            int32_t ret = recorder_->Stop(true);
+            if (ret != 0) {
+                cout << "recorder_ stop failed. ret=" << ret << endl;
+            }
         }
 
         while (cam_ == nullptr) {
@@ -438,12 +445,14 @@ public:
             return;
         }
         cam_->StopLoopingCapture();
-        isPreviewing = false;
-        isRecording = false;
+        isPreviewing_ = false;
+        isRecording_ = false;
+        g_onRecorderFlag = false;
+        g_onPreviewFlag = false;
     }
 
-    bool isPreviewing = false;
-    bool isRecording = false;
+    bool isPreviewing_ = false;
+    bool isRecording_ = false;
     EventHandler &eventHandler_;
     Camera *cam_ = nullptr;
     Recorder *recorder_ = nullptr;
@@ -479,8 +488,8 @@ public:
     void OnCreateFailed(const std::string cameraId, int32_t errorCode) override
     {
         g_onCreateFailedFlag = true;
-        cout << "Camera  ID: " <<  cameraId << endl;
-        cout << "Camera Create Failed: " <<  errorCode << endl;
+        cout << "Camera  ID: " << cameraId << endl;
+        cout << "Camera Create Failed: " << errorCode << endl;
     }
 
     void OnReleased(Camera &c) override
@@ -498,8 +507,8 @@ public:
     void OnConfigureFailed(const std::string cameraId, int32_t errorCode) override
     {
         g_onConfigureFailedFlag = true;
-        cout << "Camera  ID: " <<  cameraId << endl;
-        cout << "Camera Configured failed: " <<  errorCode << endl;
+        cout << "Camera  ID: " << cameraId << endl;
+        cout << "Camera Configured failed: " << errorCode << endl;
     }
 
     EventHandler &eventHandler_;
@@ -516,10 +525,9 @@ public:
 
     ~SampleCameraDeviceCallback() {}
 
-    // camera device status changed
     void OnCameraStatus(std::string cameraId, int32_t status) override
     {
-        cout << "SampleCameraDeviceCallback OnCameraStatus cam Id: \n" << cameraId <<endl;
+        cout << "SampleCameraDeviceCallback OnCameraStatus cam Id: \n" << cameraId << endl;
         if (status == CAMERA_DEVICE_STATE_AVAILABLE) {
             g_onCameraAvailableFlag = true;
             cout << "SampleCameraDeviceCallback onCameraAvailable\n" << endl;
@@ -533,14 +541,13 @@ public:
 /* *
  * Get camera Id
  */
-void GetCameraId(CameraKit *cameraKit, list<string> &camList, string &camId)
+void GetCameraId(CameraKit *cameraKit, list<string> &cameraList, string &cameraId)
 {
     cameraKit = CameraKit::GetInstance();
-    camList = cameraKit->GetCameraIds();
-    for (auto &cam : camList) {
+    cameraList = cameraKit->GetCameraIds();
+    for (auto &cam : cameraList) {
         cout << "camera name:" << cam << endl;
         const CameraAbility *ability = cameraKit->GetCameraAbility(cam);
-        EXPECT_NE(ability, nullptr);
         g_onGetCameraAbilityFlag = true;
         /* find camera which fits user's ability */
         list<CameraPicSize> sizeList = ability->GetSupportedSizes(0);
@@ -551,544 +558,1508 @@ void GetCameraId(CameraKit *cameraKit, list<string> &camList, string &camId)
             cout << "Pic size: " << pic.width << "x" << pic.height << endl;
             if (pic.width == WIDTH && pic.height == HEIGHT) {
                 /* 1920:width,1080:height */
-                camId = cam;
+                cameraId = cam;
                 break;
             }
         }
     }
-    if (camId.empty()) {
+
+    if (cameraId.empty()) {
         cout << "No available camera.(1080p wanted)" << endl;
         return;
     }
 }
 
-using namespace OHOS;
-using namespace std;
-
-/*
- * Feature: CamerLite
- * Function: GetCameraID
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription:  Get camera ID Test.
- */
-HWTEST_F(CameraLiteTest, Test_GetCameraIDs_001, Level1)
+/* start camera kit interface test */
+HWTEST_F(CameraLiteTest, Test_GetInstance_001, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
-    EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
-    EXPECT_FALSE(camId.empty());
-    EXPECT_EQ("main", camId);
-    cameraKit = NULL;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    EXPECT_NE(cameraKit, nullptr);
 }
 
-/*
- * Feature: CamerLite
- * Function: GetCameraAbility
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription:  Get camera ability Test.
- */
+HWTEST_F(CameraLiteTest, PrfTest_GetInstance_001, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraKit = CameraKit::GetInstance();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetCameraIds_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    list<string> cameraList = cameraKit->GetCameraIds();
+    EXPECT_TRUE(cameraList.size() > 0);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetCameraIds_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    list<string> cameraList;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraList = cameraKit->GetCameraIds();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
 HWTEST_F(CameraLiteTest, Test_GetCameraAbility_001, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
-    EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
-    SampleCameraStateMng camStateMng(eventHdlr);
-    EXPECT_EQ(g_onGetCameraAbilityFlag, true);
-    cameraKit = NULL;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraAbility *ability = cameraKit->GetCameraAbility(cameraId);
+    EXPECT_NE(ability, nullptr);
 }
 
-/*
- * Feature: CamerLite
- * Function: CreatCamerakit
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription:  create camerakit instance Test.
- */
-HWTEST_F(CameraLiteTest, TestCreatCamerakit_001, Level1)
+HWTEST_F(CameraLiteTest, Test_GetCameraAbility_002, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    cameraKit = CameraKit::GetInstance();
-    EXPECT_NE(nullptr, cameraKit);
-    cameraKit = NULL;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string errorCameraId = "-1";
+    const CameraAbility *ability = cameraKit->GetCameraAbility(errorCameraId);
+    EXPECT_EQ(ability, nullptr);
 }
 
-/*
- * Feature: CamerLite
- * Function: SampleCameraDeviceCallback
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Get cameraKit deviceCallback
- */
-HWTEST_F(CameraLiteTest, TestNewDeviceCallback_001, Level1)
+HWTEST_F(CameraLiteTest, Test_GetCameraAbility_003, Level1)
 {
-    SampleCameraDeviceCallback *deviceCallback = nullptr;
-    deviceCallback = new SampleCameraDeviceCallback();
-    EXPECT_NE(nullptr, deviceCallback);
-    delete deviceCallback;
-    deviceCallback = nullptr;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string errorCameraId = "main";
+    const CameraAbility *ability = cameraKit->GetCameraAbility(errorCameraId);
+    EXPECT_EQ(ability, nullptr);
 }
 
-/*
- * Feature: CamerLite
- * Function: GetSupportedSizes
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Get cameraKit supported Size
- */
-HWTEST_F(CameraLiteTest, TestGetSupportedSizes_001, Level1)
+HWTEST_F(CameraLiteTest, PrfTest_GetCameraAbility_001, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
-    EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
-    EXPECT_EQ(g_onGetSupportedSizesFlag, true);
-    cameraKit = NULL;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    const CameraAbility *ability = nullptr;
+    string cameraId = "0";
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        ability = cameraKit->GetCameraAbility(cameraId);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
-/*
- * Feature: CamerLite
- * Function: RegisterCameraDeviceCallback
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Register Camera device callback
- */
+HWTEST_F(CameraLiteTest, Test_GetCameraInfo_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    list<string> cameraList = cameraKit->GetCameraIds();
+    for (auto &cameraId : cameraList) {
+        const CameraInfo *cameraInfo = cameraKit->GetCameraInfo(cameraId);
+        EXPECT_NE(cameraInfo, nullptr);
+    }
+}
+
+HWTEST_F(CameraLiteTest, Test_GetCameraInfo_002, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string errorCameraId = "-1";
+    const CameraInfo *cameraInfo = cameraKit->GetCameraInfo(errorCameraId);
+    EXPECT_EQ(cameraInfo, nullptr);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetCameraInfo_003, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string errorCameraId = "main";
+    const CameraInfo *cameraInfo = cameraKit->GetCameraInfo(errorCameraId);
+    EXPECT_EQ(cameraInfo, nullptr);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetCameraInfo_001, Level1)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraKit->GetCameraInfo(cameraId);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
 HWTEST_F(CameraLiteTest, Test_RegisterCameraDeviceCallback_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    SampleCameraDeviceCallback *deviceCallback = nullptr;
-    deviceCallback = new SampleCameraDeviceCallback();
-    EXPECT_NE(nullptr, deviceCallback);
-    cameraKit->RegisterCameraDeviceCallback(*deviceCallback, eventHdlr);
-    sleep(1);
-    EXPECT_EQ(g_onCameraAvailableFlag, true);
-    delete deviceCallback;
-    deviceCallback = nullptr;
-    cameraKit = NULL;
+    SampleCameraDeviceCallback deviceCallback = SampleCameraDeviceCallback();
+    g_onCameraAvailableFlag = false;
+    cameraKit->RegisterCameraDeviceCallback(deviceCallback, eventHdlr);
+    sleep(2);
+    EXPECT_TRUE(g_onCameraAvailableFlag);
 }
 
-/*
- * Feature: CamerLite
- * Function: RegisterCameraDeviceCallback
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Unregister Camera Device Callback
- */
+HWTEST_F(CameraLiteTest, PrfTest_RegisterCameraDeviceCallback_001, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    SampleCameraDeviceCallback deviceCallback = SampleCameraDeviceCallback();
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraKit->RegisterCameraDeviceCallback(deviceCallback, eventHdlr);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
 HWTEST_F(CameraLiteTest, Test_UnregisterCameraDeviceCallback_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    SampleCameraDeviceCallback *deviceCallback = nullptr;
-    deviceCallback = new SampleCameraDeviceCallback();
-    EXPECT_NE(nullptr, deviceCallback);
-    cameraKit->RegisterCameraDeviceCallback(*deviceCallback, eventHdlr);
-    sleep(1);
-    EXPECT_EQ(g_onCameraAvailableFlag, true);
-    cameraKit->UnregisterCameraDeviceCallback(*deviceCallback);
-    sleep(1);
-    EXPECT_EQ(g_onCameraUnavailableFlag, false);
-    delete deviceCallback;
-    deviceCallback = nullptr;
-    cameraKit = NULL;
+    SampleCameraDeviceCallback deviceCallback = SampleCameraDeviceCallback();
+    g_onCameraAvailableFlag = false;
+    cameraKit->RegisterCameraDeviceCallback(deviceCallback, eventHdlr);
+    sleep(2);
+    g_onCameraAvailableFlag = false;
+    cameraKit->UnregisterCameraDeviceCallback(deviceCallback);
+    sleep(2);
+    EXPECT_EQ(g_onCameraAvailableFlag, false);
 }
 
-/*
- * Feature: CamerLite
- * Function: CreateCamera
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Capture On Configure
- */
-HWTEST_F(CameraLiteTest, TestCaptureOnConfigure_001, Level1)
+HWTEST_F(CameraLiteTest, PrfTest_UnregisterCameraDeviceCallback_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(1);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(1);
-    EXPECT_EQ(g_onConfigureFlag, true);
-    EXPECT_NE(camStateMng.cam_, nullptr);
-    cameraKit = NULL;
+    SampleCameraDeviceCallback deviceCallback = SampleCameraDeviceCallback();
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        cameraKit->RegisterCameraDeviceCallback(deviceCallback, eventHdlr);
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraKit->UnregisterCameraDeviceCallback(deviceCallback);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
-/*
- * Feature: CamerLite
- * Function: CreateCamera
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Create Camera
- */
-HWTEST_F(CameraLiteTest, TestCreateCamera_001, Level1)
+HWTEST_F(CameraLiteTest, Test_CreateCamera_001, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
+    g_onCreatedFlag = false;
+    g_onCreateFailedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
     EXPECT_EQ(g_onCreatedFlag, true);
-    EXPECT_NE(g_onCreateFailedFlag, true);
-    EXPECT_NE(camStateMng.cam_, nullptr);
-    cameraKit = NULL;
+    EXPECT_EQ(g_onCreateFailedFlag, false);
 }
 
-/*
- * Feature: CamerLite
- * Function: CreateCamera
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Create Camera with error camera id
- */
-HWTEST_F(CameraLiteTest, TestCapture_Create_Camera_ERROR_cameraId_001, Level1)
+HWTEST_F(CameraLiteTest, Test_CreateCamera_002, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    cameraKit = CameraKit::GetInstance();
-    string camId = "0";
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "main";
     EventHandler eventHdlr;
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
+    g_onCreatedFlag = false;
+    g_onCreateFailedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
     EXPECT_EQ(g_onCreatedFlag, false);
     EXPECT_EQ(g_onCreateFailedFlag, true);
-    cameraKit = NULL;
 }
 
-/*
- * Feature: CamerLite
- * Function: FrameConfig
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test Capture Frame config
- */
-HWTEST_F(CameraLiteTest, TestCapture_Frame_config_001, Level1)
+HWTEST_F(CameraLiteTest, Test_CreateCamera_003, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    list<string> cameraList;
+    string cameraId = "0";
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    g_onCreatedFlag = false;
+    g_onCreateFailedFlag = false;
     SampleCameraStateMng camStateMng(eventHdlr);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
-    FrameConfig *fc = new FrameConfig(FRAME_CONFIG_CAPTURE);
-    EXPECT_NE(fc, nullptr);
-    delete fc;
-    cameraKit = NULL;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    EXPECT_EQ(g_onCreatedFlag, true);
 }
 
-/*
- * Feature: CamerLite
- * Function: CreateSurface
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test Create Surface
- */
-HWTEST_F(CameraLiteTest, TestCapture_Create_Surface_001, Level1)
+HWTEST_F(CameraLiteTest, Test_CreateCamera_004, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    g_onCreatedFlag = false;
+    g_onCreateFailedFlag = false;
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
-    FrameConfig *fc = new FrameConfig(FRAME_CONFIG_CAPTURE);
-    Surface *surface = Surface::CreateSurface();
-    if (surface == nullptr) {
-        delete fc;
-        cout << "CreateSurface failed" << endl;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    cameraId = "-1";
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    EXPECT_EQ(g_onCreatedFlag, true);
+    EXPECT_EQ(g_onCreateFailedFlag, true);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_CreateCamera_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t totalTime = 0;
+    int64_t usecTimes = 1000000;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    EXPECT_NE(surface, nullptr);
-    delete surface;
-    delete fc;
-    cameraKit = NULL;
+    int64_t expectTime = 500000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+} /* end camera kit interface test */
+
+/* start camera ability interface test */
+HWTEST_F(CameraLiteTest, Test_GetSupportedSizes_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    list<string> cameraList = cameraKit->GetCameraIds();
+    for (auto &cameraId : cameraList) {
+        const CameraAbility *ability = cameraKit->GetCameraAbility(cameraId);
+        list<CameraPicSize> cameraPicSizes = ability->GetSupportedSizes(0);
+        EXPECT_TRUE(cameraPicSizes.size() > 0);
+    }
 }
 
-/*
- * Feature: CamerLite
- * Function: CreateSurface
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Get Surface Size
- */
-HWTEST_F(CameraLiteTest, TestCapture_GetSurfaceSize_001, Level1)
+HWTEST_F(CameraLiteTest, PrfTest_GetSupportedSizes_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraAbility *ability = cameraKit->GetCameraAbility(cameraId);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        ability->GetSupportedSizes(0);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetSupportedAfModes_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    list<string> cameraList = cameraKit->GetCameraIds();
+    for (auto &cameraId : cameraList) {
+        const CameraAbility *ability = cameraKit->GetCameraAbility(cameraId);
+        list<int32_t> afModes = ability->GetSupportedAfModes();
+        EXPECT_TRUE(afModes.size() >= 0);
+    }
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetSupportedAfModes_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraAbility *ability = cameraKit->GetCameraAbility(cameraId);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        ability->GetSupportedAfModes();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetSupportedAeModes_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    list<string> cameraList = cameraKit->GetCameraIds();
+    for (auto &cameraId : cameraList) {
+        const CameraAbility *ability = cameraKit->GetCameraAbility(cameraId);
+        list<int32_t> aeModes = ability->GetSupportedAeModes();
+        EXPECT_TRUE(aeModes.size() >= 0);
+    }
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetSupportedAeModes_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraAbility *ability = cameraKit->GetCameraAbility(cameraId);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t totalTime = 0;
+    int64_t usecTimes = 1000000;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        ability->GetSupportedAeModes();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+} /* end camera ability interface test*/
+
+/* start camera state callback test */
+HWTEST_F(CameraLiteTest, Test_OnCreate_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCreatedFlag = false;
+    g_onCreateFailedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    EXPECT_EQ(g_onCreatedFlag, true);
+    EXPECT_EQ(g_onCreateFailedFlag, false);
+}
+
+HWTEST_F(CameraLiteTest, Test_OnCreate_002, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCreatedFlag = false;
+    g_onCreateFailedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_EQ(g_onCreatedFlag, true);
+    EXPECT_NE(g_onCreateFailedFlag, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_OnCreateFailed_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "-1";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCreateFailedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    EXPECT_EQ(g_onCreateFailedFlag, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_OnCreateFailed_002, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "main";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCreateFailedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    EXPECT_EQ(g_onCreateFailedFlag, true);
+} /* end camera state callback test */
+
+/* start frame config & frame state call back interface test */
+HWTEST_F(CameraLiteTest, Test_FrameConfig_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    EXPECT_NE(frameConfig.get(), nullptr);
+}
+
+HWTEST_F(CameraLiteTest, Test_FrameConfig_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_RECORD);
+    EXPECT_NE(frameConfig.get(), nullptr);
+}
+
+HWTEST_F(CameraLiteTest, Test_FrameConfig_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
+    EXPECT_NE(frameConfig.get(), nullptr);
+}
+
+HWTEST_F(CameraLiteTest, Test_FrameConfig_004, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CALLBACK);
+    EXPECT_NE(frameConfig.get(), nullptr);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_Frameconfig_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = nullptr;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_Frameconfig_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = nullptr;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_RECORD);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_Frameconfig_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = nullptr;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_Frameconfig_004, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = nullptr;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CALLBACK);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetFrameConfigureType_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onGetFrameConfigureType = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    EXPECT_EQ(g_onGetFrameConfigureType, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetFrameConfigureType_002, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onGetFrameConfigureType = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_EQ(g_onGetFrameConfigureType, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetFrameConfigureType_003, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onGetFrameConfigureType = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_EQ(g_onGetFrameConfigureType, false);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetFrameConfigureType_004, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onGetFrameConfigureType = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_EQ(g_onGetFrameConfigureType, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetFrameConfigureType_005, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onGetFrameConfigureType = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_EQ(g_onGetFrameConfigureType, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_SetVendorParameter_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[4] = 5;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    uint8_t *privateTagTemp = new uint8_t[10];
+    frameConfig->GetVendorParameter(privateTagTemp, 10);
+    EXPECT_TRUE(privateTagTemp[4] == 5);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, Test_SetVendorParameter_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[10] = 10;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    uint8_t *privateTagTemp = new uint8_t[PRIVATE_TAG_LEN];
+    frameConfig->GetVendorParameter(privateTagTemp, PRIVATE_TAG_LEN);
+    EXPECT_TRUE(privateTagTemp[10] == 10);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, Test_SetVendorParameter_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_RECORD);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[0] = 1;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    uint8_t *privateTagTemp = new uint8_t[PRIVATE_TAG_LEN];
+    frameConfig->GetVendorParameter(privateTagTemp, PRIVATE_TAG_LEN);
+    EXPECT_TRUE(privateTagTemp[0] == 1);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, Test_SetVendorParameter_004, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CALLBACK);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[31] = 31;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    uint8_t *privateTagTemp = new uint8_t[PRIVATE_TAG_LEN];
+    frameConfig->GetVendorParameter(privateTagTemp, PRIVATE_TAG_LEN);
+    EXPECT_TRUE(privateTagTemp[31] == 31);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_SetVendorParameter_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[1] = 1;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_SetVendorParameter_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[2] = 2;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_SetVendorParameter_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_RECORD);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[3] = 3;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_SetVendorParameter_004, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CALLBACK);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[4] = 4;
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetVendorParameter_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[1] = 1;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    uint8_t *privateTagTemp = new uint8_t[PRIVATE_TAG_LEN];
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetVendorParameter(privateTagTemp, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetVendorParameter_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[2] = 2;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    uint8_t *privateTagTemp = new uint8_t[PRIVATE_TAG_LEN];
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetVendorParameter(privateTagTemp, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetVendorParameter_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_RECORD);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[3] = 3;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    uint8_t *privateTagTemp = new uint8_t[PRIVATE_TAG_LEN];
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetVendorParameter(privateTagTemp, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetVendorParameter_004, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CALLBACK);
+    uint8_t *privateTag = new uint8_t[PRIVATE_TAG_LEN];
+    privateTag[4] = 4;
+    frameConfig->SetVendorParameter(privateTag, PRIVATE_TAG_LEN);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    uint8_t *privateTagTemp = new uint8_t[PRIVATE_TAG_LEN];
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetVendorParameter(privateTagTemp, PRIVATE_TAG_LEN);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete[] privateTag;
+    delete[] privateTagTemp;
+}
+
+HWTEST_F(CameraLiteTest, Test_GetSurface_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
-    FrameConfig *fc = new FrameConfig(FRAME_CONFIG_CAPTURE);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
     Surface *surface = Surface::CreateSurface();
-    if (surface == nullptr) {
-        delete fc;
-        cout << "CreateSurface failed" << endl;
-    }
-    surface->SetWidthAndHeight(1920, 1080); /* 1920:width,1080:height */
+    surface->SetWidthAndHeight(1920, 1080);
     EXPECT_EQ(1920, surface->GetWidth());
     EXPECT_EQ(1080, surface->GetHeight());
-    delete surface;
-    delete fc;
-    cameraKit = NULL;
 }
 
-/*
- * Feature: CamerLite
- * Function: GetSurfaces
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Get FrameConfig size
- */
-HWTEST_F(CameraLiteTest, TestCapture_frameConfig_getsize_001, Level1)
+HWTEST_F(CameraLiteTest, Test_GetSurface_002, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
-    FrameConfig *fc = new FrameConfig(FRAME_CONFIG_CAPTURE);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
     Surface *surface = Surface::CreateSurface();
-    if (surface == nullptr) {
-        delete fc;
-        cout << "CreateSurface failed" << endl;
-    }
-    surface->SetWidthAndHeight(1920, 1080); /* 1920:width,1080:height */
-    fc->AddSurface(*surface);
-    EXPECT_NE(0, fc->GetSurfaces().size());
-    delete surface;
-    delete fc;
-    cameraKit = NULL;
+    surface->SetWidthAndHeight(480, 360);
+    EXPECT_EQ(480, surface->GetWidth());
+    EXPECT_EQ(360, surface->GetHeight());
 }
 
-/*
- * Feature: CamerLite
- * Function: Capture
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test Get Frame
- */
-HWTEST_F(CameraLiteTest, TestOnFrameProgressed_001, Level1)
+HWTEST_F(CameraLiteTest, Test_GetSurface_003, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
+    Surface *surface = Surface::CreateSurface();
+    surface->SetWidthAndHeight(1920, 1080);
+    frameConfig->AddSurface(*surface);
+    EXPECT_FALSE(frameConfig->GetSurfaces().size() == 0);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetSurface_004, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    frameConfig->RemoveSurface(*surface);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 0);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetSurface_005, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_RECORD);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 1);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetSurface_006, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CALLBACK);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 1);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetSurfaces_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetSurfaces();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetSurfaces_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CAPTURE);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetSurfaces();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetSurfaces_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_RECORD);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetSurfaces();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetSurfaces_004, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_CALLBACK);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->GetSurfaces();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_OnFrameProgressed_001, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
     camStateMng.Capture();
-    sleep(1);
+    sleep(2);
     EXPECT_EQ(g_onFrameStartedFlag, true);
     EXPECT_EQ(g_onFrameProgressedFlag, true);
-    cameraKit = NULL;
 }
 
-/*
- * Feature: CamerLite
- * Function: Capture
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Get FrameConfig onConfig
- */
-HWTEST_F(CameraLiteTest, TestGetFrameConfigureType_001, Level1)
+HWTEST_F(CameraLiteTest, Test_OnFrameCompletedFlag_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
     camStateMng.Capture();
-    sleep(1);
-    EXPECT_EQ(g_onGetFrameConfigureType, true);
-    cameraKit = NULL;
-}
-
-/*
- * Feature: CamerLite
- * Function: Capture
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test Get Frame finished
- */
-HWTEST_F(CameraLiteTest, TestFrameCompletedFlag_001, Level1)
-{
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
-    EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
-    SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
-    camStateMng.Capture();
-    sleep(1);
+    sleep(2);
     EXPECT_EQ(g_onFrameFinishedFlag, true);
-    cameraKit = NULL;
 }
 
-/*
- * Feature: CamerLite
- * Function: Capture
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test GetFrame Error
- */
-HWTEST_F(CameraLiteTest, TestonFrameErrorFlag_001, Level1)
+HWTEST_F(CameraLiteTest, Test_OnFrameErrorFlag_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
     camStateMng.Capture();
-    sleep(1);
+    sleep(2);
     EXPECT_NE(g_onFrameErrorFlag, true);
-    cameraKit = NULL;
 }
 
-/*
- * Feature: CamerLite
- * Function: Capture
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test Capture Success
- */
-HWTEST_F(CameraLiteTest, TestCapture_001, Level1)
+HWTEST_F(CameraLiteTest, Test_AddSurface_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 1);
+}
+
+HWTEST_F(CameraLiteTest, Test_AddSurface_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    frameConfig->AddSurface(*surface);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 2);
+}
+
+HWTEST_F(CameraLiteTest, Test_AddSurface_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    frameConfig->AddSurface(*surface);
+    frameConfig->AddSurface(*surface);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 3);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_AddSurface_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->AddSurface(*surface);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_RemoveSurface_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    frameConfig->RemoveSurface(*surface);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 0);
+}
+
+HWTEST_F(CameraLiteTest, Test_RemoveSurface_002, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    Surface *surface1 = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    frameConfig->AddSurface(*surface1);
+    frameConfig->RemoveSurface(*surface1);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 1);
+}
+
+HWTEST_F(CameraLiteTest, Test_RemoveSurface_003, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    Surface *surface1 = Surface::CreateSurface();
+    frameConfig->AddSurface(*surface);
+    frameConfig->AddSurface(*surface1);
+    frameConfig->RemoveSurface(*surface);
+    frameConfig->RemoveSurface(*surface1);
+    list<Surface *> list = frameConfig->GetSurfaces();
+    EXPECT_TRUE(list.size() == 0);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_RemoveSurface_001, Level1)
+{
+    shared_ptr<FrameConfig> frameConfig = make_shared<FrameConfig>(FRAME_CONFIG_PREVIEW);
+    Surface *surface = Surface::CreateSurface();
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        frameConfig->AddSurface(*surface);
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        frameConfig->RemoveSurface(*surface);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_Capture_001, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
     camStateMng.Capture();
-    sleep(1);
+    sleep(2);
     EXPECT_EQ(g_onCaptureTriggerStartedFlag, true);
     EXPECT_EQ(g_onCaptureTriggerCompletedFlag, true);
-    cameraKit = NULL;
 }
 
-/*
- * Feature: CamerLite
- * Function: Capture,StartRecord
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test capture and record
- */
-HWTEST_F(CameraLiteTest, TestRecord_001, Level1)
+HWTEST_F(CameraLiteTest, Test_Capture_002, Level1)
 {
-    CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
-    EXPECT_EQ(g_onCreatedFlag, true);
-    EXPECT_EQ(g_onConfigureFlag, true);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
     camStateMng.Capture();
-    sleep(3);
-    camStateMng.StartRecord();
-    sleep(3);
+    sleep(2);
     camStateMng.Stop();
-    cameraKit = NULL;
+    sleep(2);
+    EXPECT_EQ(g_onCaptureTriggerStartedFlag, true);
+    EXPECT_EQ(g_onCaptureTriggerCompletedFlag, true);
 }
 
-/*
- * Feature: CamerLite
- * Function: Capture
- * SubFunction: NA
- * FunctionPoints: NA.
- * EnvConditions: NA
- * CaseDescription: Test get event handler
- */
-HWTEST_F(CameraLiteTest, TestGetEventHandler_001, Level1)
+HWTEST_F(CameraLiteTest, Test_Capture_003, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    EventHandler eventHdlr;
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    sleep(2);
+    EXPECT_EQ(g_onCaptureTriggerStartedFlag, false);
+    EXPECT_EQ(g_onCaptureTriggerCompletedFlag, false);
+}
+
+HWTEST_F(CameraLiteTest, Test_Capture_004, Level1)
 {
     CameraKit *cameraKit = nullptr;
-    list<string> camList;
-    string camId;
+    list<string> cameraList;
+    string cameraId;
     EventHandler eventHdlr;
-    GetCameraId(cameraKit, camList, camId);
+    GetCameraId(cameraKit, cameraList, cameraId);
     SampleCameraStateMng camStateMng(eventHdlr);
-    sleep(3);
-    cameraKit->CreateCamera(camId, camStateMng, eventHdlr);
-    sleep(3);
-    EXPECT_EQ(g_onCreatedFlag, true);
-    EXPECT_EQ(g_onConfigureFlag, true);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
     camStateMng.Capture();
-    sleep(3);
-    camStateMng.StartRecord();
-    sleep(3);
+    sleep(2);
     camStateMng.Stop();
-    cameraKit = NULL;
+    sleep(2);
+    EXPECT_EQ(g_onCaptureTriggerStartedFlag, true);
+    EXPECT_EQ(g_onCaptureTriggerCompletedFlag, true);
 }
-} // namespace OHOS
+
+HWTEST_F(CameraLiteTest, Test_Capture_005, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    EXPECT_EQ(g_onCaptureTriggerStartedFlag, true);
+    EXPECT_EQ(g_onCaptureTriggerCompletedFlag, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_Capture_006, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    EXPECT_TRUE(g_onCaptureTriggerStartedFlag);
+    EXPECT_TRUE(g_onCaptureTriggerCompletedFlag);
+}
+
+HWTEST_F(CameraLiteTest, Test_Capture_007, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.Stop();
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    EXPECT_TRUE(g_onCaptureTriggerStartedFlag);
+    EXPECT_TRUE(g_onCaptureTriggerCompletedFlag);
+}
+
+HWTEST_F(CameraLiteTest, Test_Capture_008, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    g_onCaptureTriggerStartedFlag = false;
+    g_onCaptureTriggerCompletedFlag = false;
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    sleep(2);
+    camStateMng.Capture();
+    sleep(2);
+    EXPECT_EQ(g_onCaptureTriggerStartedFlag, true);
+    EXPECT_EQ(g_onCaptureTriggerCompletedFlag, true);
+}
+
+HWTEST_F(CameraLiteTest, Test_Preview_001, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    g_onPreviewFlag = false;
+    camStateMng.StartPreview();
+    sleep(2);
+    EXPECT_TRUE(g_onPreviewFlag);
+    camStateMng.Stop();
+}
+
+HWTEST_F(CameraLiteTest, Test_Preview_002, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    g_onPreviewFlag = false;
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_FALSE(g_onPreviewFlag);
+}
+
+HWTEST_F(CameraLiteTest, Test_Preview_003, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    g_onPreviewFlag = false;
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    camStateMng.StartPreview();
+    sleep(2);
+    EXPECT_TRUE(g_onPreviewFlag);
+}
+
+HWTEST_F(CameraLiteTest, Test_Preview_004, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    g_onPreviewFlag = false;
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_FALSE(g_onPreviewFlag);
+}
+
+HWTEST_F(CameraLiteTest, Test_Preview_005, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    g_onPreviewFlag = false;
+    camStateMng.Capture();
+    sleep(2);
+    camStateMng.Stop();
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
+    EXPECT_TRUE(g_onPreviewFlag);
+    camStateMng.Stop();
+}
+
+HWTEST_F(CameraLiteTest, Test_Preview_006, Level1)
+{
+    CameraKit *cameraKit = nullptr;
+    list<string> cameraList;
+    string cameraId;
+    EventHandler eventHdlr;
+    GetCameraId(cameraKit, cameraList, cameraId);
+    SampleCameraStateMng camStateMng(eventHdlr);
+    cameraKit->CreateCamera(cameraId, camStateMng, eventHdlr);
+    g_onPreviewFlag = false;
+    camStateMng.Capture();
+    sleep(2);
+    camStateMng.StartPreview();
+    sleep(2);
+    camStateMng.Stop();
+    EXPECT_FALSE(g_onPreviewFlag);
+} /* end frame config & frame state call back interface test */
+
+/* start camera info interface test */
+HWTEST_F(CameraLiteTest, Test_GetCameraType_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraInfo *cameraInfo = cameraKit->GetCameraInfo(cameraId);
+    int32_t cameraType = cameraInfo->GetCameraType();
+    EXPECT_TRUE(cameraType <= 3);
+    EXPECT_TRUE(cameraType >= 0);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetCameraType_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraInfo *cameraInfo = cameraKit->GetCameraInfo(cameraId);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraInfo->GetCameraType();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST_F(CameraLiteTest, Test_GetCameraFacingType_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraInfo *cameraInfo = cameraKit->GetCameraInfo(cameraId);
+    int32_t cameraFacingType = cameraInfo->GetCameraFacingType();
+    EXPECT_TRUE(cameraFacingType <= 2);
+    EXPECT_TRUE(cameraFacingType >= 0);
+}
+
+HWTEST_F(CameraLiteTest, PrfTest_GetCameraFacingType_001, Level1)
+{
+    CameraKit *cameraKit = CameraKit::GetInstance();
+    string cameraId = "0";
+    const CameraInfo *cameraInfo = cameraKit->GetCameraInfo(cameraId);
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        cameraInfo->GetCameraFacingType();
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+} /* end camera info interface test */
+}  // namespace OHOS
