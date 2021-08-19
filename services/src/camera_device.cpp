@@ -55,23 +55,37 @@ inline PicSize Convert2CodecSize(int32_t width, int32_t height)
 {
     struct SizeMap {
         PicSize res_;
-        int32_t width_;
-        int32_t height_;
+        uint32_t width_;
+        uint32_t height_;
     };
     static SizeMap sizeMap[] = {
-        {RESOLUTION_CIF, 352, 288},
-        {RESOLUTION_360P, 640, 360},
-        {RESOLUTION_D1_PAL, 720, 576},
-        {RESOLUTION_D1_NTSC, 720, 480},
-        {RESOLUTION_720P, 1280, 720},
-        {RESOLUTION_1080P, 1920, 1080}
+        {RESOLUTION_CIF, 352, 288},         {RESOLUTION_360P, 640, 360},        {RESOLUTION_D1_PAL, 720, 576},
+        {RESOLUTION_D1_NTSC, 720, 480},     {RESOLUTION_720P, 1280, 720},       {RESOLUTION_1080P, 1920, 1080},
+        {RESOLUTION_2560X1440, 2560, 1440}, {RESOLUTION_2592X1520, 2592, 1520}, {RESOLUTION_2592X1536, 2592, 1536},
+        {RESOLUTION_2592X1944, 2592, 1944}, {RESOLUTION_2688X1536, 2688, 1536}, {RESOLUTION_2716X1524, 2716, 1524},
+        {RESOLUTION_3840X2160, 3840, 2160}, {RESOLUTION_4096X2160, 4096, 2160}, {RESOLUTION_3000X3000, 3000, 3000},
+        {RESOLUTION_4000X3000, 4000, 3000}, {RESOLUTION_7680X4320, 7680, 4320}, {RESOLUTION_3840X8640, 3840, 8640}
     };
+
     for (uint32_t i = 0; i < sizeof(sizeMap) / sizeof(SizeMap); i++) {
         if (sizeMap[i].width_ == width && sizeMap[i].height_ == height) {
             return sizeMap[i].res_;
         }
     }
     return RESOLUTION_INVALID;
+}
+
+static AvCodecMime ConverFormat(ImageFormat format)
+{
+    if (format == FORMAT_JPEG) {
+        return MEDIA_MIMETYPE_IMAGE_JPEG;
+    } else if (format == FORMAT_AVC) {
+        return MEDIA_MIMETYPE_VIDEO_AVC;
+    } else if (format == FORMAT_HEVC) {
+        return MEDIA_MIMETYPE_VIDEO_HEVC;
+    } else {
+        return MEDIA_MIMETYPE_INVALID;
+    }
 }
 
 static int32_t SetVencSource(CODEC_HANDLETYPE codecHdl, uint32_t deviceId)
@@ -101,7 +115,7 @@ static int32_t CameraCreateVideoEnc(FrameConfig &fc,
     param[paramIndex].size = sizeof(CodecType);
     paramIndex++;
 
-    AvCodecMime codecMime = MEDIA_MIMETYPE_VIDEO_HEVC;
+    AvCodecMime codecMime = ConverFormat(stream.format);
     param[paramIndex].key = KEY_MIMETYPE;
     param[paramIndex].val = &codecMime;
     param[paramIndex].size = sizeof(AvCodecMime);
