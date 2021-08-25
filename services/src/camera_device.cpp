@@ -75,7 +75,7 @@ inline PicSize Convert2CodecSize(int32_t width, int32_t height)
     return RESOLUTION_INVALID;
 }
 
-static AvCodecMime ConverFormat(ImageFormat format)
+AvCodecMime ConverFormat(ImageFormat format)
 {
     if (format == FORMAT_JPEG) {
         return MEDIA_MIMETYPE_IMAGE_JPEG;
@@ -115,7 +115,7 @@ static int32_t CameraCreateVideoEnc(FrameConfig &fc,
     param[paramIndex].size = sizeof(CodecType);
     paramIndex++;
 
-    AvCodecMime codecMime = ConverFormat(stream.format);
+    AvCodecMime codecMime = MEDIA_MIMETYPE_VIDEO_HEVC;
     param[paramIndex].key = KEY_MIMETYPE;
     param[paramIndex].val = &codecMime;
     param[paramIndex].size = sizeof(AvCodecMime);
