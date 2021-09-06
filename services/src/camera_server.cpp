@@ -55,9 +55,6 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
         case CAEMRA_SERVER_SET_CAMERA_CONFIG:
             CameraServer::GetInstance()->SetCameraConfig(req, reply);
             break;
-        case CAEMRA_SERVER_SET_FRAME_CONFIG:
-            CameraServer::GetInstance()->SetFrameConfig(req, reply);
-            break;
         case CAMERA_SERVER_TRIGGER_LOOPING_CAPTURE:
             CameraServer::GetInstance()->TriggerLoopingCapture(req, reply);
             break;

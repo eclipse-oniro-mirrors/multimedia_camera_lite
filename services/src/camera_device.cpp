@@ -37,7 +37,6 @@
 using namespace OHOS;
 using namespace OHOS::Media;
 using namespace std;
-#define DELAY_TIME_ONE_FRAME 40000
 
 /** Indicates that the current frame is an Instantaneous Decoder Refresh (IDR) frame. */
 const int32_t KEY_IS_SYNC_FRAME = 1;
@@ -47,6 +46,7 @@ const int32_t KEY_TIME_US = 2;
 const int32_t IMAGE_WIDTH = 3;       // "DATA_PIX_FORMAT"
 const int32_t IMAGE_HEIGHT = 4;       // "DATA_PIX_FORMAT"
 const int32_t IMAGE_SIZE = 5;       // "DATA_PIX_FORMAT"
+const int32_t DELAY_TIME_ONE_FRAME = 30000；
 
 namespace OHOS {
 namespace Media {
@@ -654,14 +654,14 @@ void* CallbackAssistant::StreamCopyProcess(void *arg)
         return nullptr;
     }
     while (assistant->state_ == LOOP_LOOPING) {
-        SurfaceBuffer *surfaceBuf = assistant->capSurface_->RequestBuffer();
-        if (surfaceBuf == nullptr) {
-            usleep(DELAY_TIME_ONE_FRAME);
-            continue;
-        }
         HalBuffer streamBuffer;
         int32_t ret = HalCameraDequeueBuf(assistant->cameraId_, assistant->streamId_, &streamBuffer);
         if (ret != MEDIA_OK) {
+            usleep(DELAY_TIME_ONE_FRAME);
+            continue;
+        }
+        SurfaceBuffer *surfaceBuf = assistant->capSurface_->RequestBuffer();
+        if (surfaceBuf == nullptr) {
             usleep(DELAY_TIME_ONE_FRAME);
             continue;
         }
