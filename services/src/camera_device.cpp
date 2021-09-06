@@ -654,14 +654,14 @@ void* CallbackAssistant::StreamCopyProcess(void *arg)
         return nullptr;
     }
     while (assistant->state_ == LOOP_LOOPING) {
-        HalBuffer streamBuffer;
-        int32_t ret = HalCameraDequeueBuf(assistant->cameraId_, assistant->streamId_, &streamBuffer);
-        if (ret != MEDIA_OK) {
+        SurfaceBuffer *surfaceBuf = assistant->capSurface_->RequestBuffer();
+        if (surfaceBuf == nullptr) {
             usleep(DELAY_TIME_ONE_FRAME);
             continue;
         }
-        SurfaceBuffer *surfaceBuf = assistant->capSurface_->RequestBuffer();
-        if (surfaceBuf == nullptr) {
+        HalBuffer streamBuffer;
+        int32_t ret = HalCameraDequeueBuf(assistant->cameraId_, assistant->streamId_, &streamBuffer);
+        if (ret != MEDIA_OK) {
             usleep(DELAY_TIME_ONE_FRAME);
             continue;
         }
