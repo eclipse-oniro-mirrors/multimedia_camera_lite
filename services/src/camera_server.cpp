@@ -250,7 +250,7 @@ void CameraServer::TriggerLoopingCapture(IpcIo *req, IpcIo *reply)
     delete fc;
 }
 
-void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply) 
+void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
     string cameraId((const char *)(IpcIoPopString(req, &sz)));
