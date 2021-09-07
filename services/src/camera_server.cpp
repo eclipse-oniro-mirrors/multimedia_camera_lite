@@ -55,9 +55,6 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
         case CAEMRA_SERVER_SET_CAMERA_CONFIG:
             CameraServer::GetInstance()->SetCameraConfig(req, reply);
             break;
-        case CAEMRA_SERVER_SET_FRAME_CONFIG:
-            CameraServer::GetInstance()->SetFrameConfig(req, reply);
-            break;
         case CAMERA_SERVER_TRIGGER_LOOPING_CAPTURE:
             CameraServer::GetInstance()->TriggerLoopingCapture(req, reply);
             break;
@@ -253,7 +250,7 @@ void CameraServer::TriggerLoopingCapture(IpcIo *req, IpcIo *reply)
     delete fc;
 }
 
-void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply) 
+void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
     string cameraId((const char *)(IpcIoPopString(req, &sz)));
