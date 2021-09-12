@@ -56,7 +56,7 @@ CameraAbility *CameraService::GetCameraAbility(std::string &cameraId)
     if (ability == nullptr) {
         return nullptr;
     }
-    uint32_t streamCapNum;
+    uint32_t streamCapNum = 0;
     StreamCap *streamCap = nullptr;
     int32_t ret = HalCameraGetStreamCapNum(atoi(cameraId.c_str()), &streamCapNum);
     streamCap = new StreamCap[streamCapNum];
@@ -71,7 +71,7 @@ CameraAbility *CameraService::GetCameraAbility(std::string &cameraId)
     }
     ability->SetParameterRange(PARAM_KEY_SIZE, range);
 
-    AbilityInfo cameraAbility;
+    AbilityInfo cameraAbility = {};
     HalCameraGetAbility(atoi(cameraId.c_str()), &cameraAbility);
     // Get supported AF Modes
     list<int32_t> afModes;
