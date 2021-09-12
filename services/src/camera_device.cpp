@@ -356,7 +356,7 @@ int32_t RecordAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     }
     for (auto &surface : surfaceList) {
         CODEC_HANDLETYPE codecHdl = nullptr;
-        StreamAttr stream;
+        StreamAttr stream = {};
 #ifdef __LINUX__
         StreamAttrInitialize(&stream, g_surface, STREAM_VIDEO, FORMAT_YVU420);
 #else
@@ -370,7 +370,7 @@ int32_t RecordAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
         fc.GetVendorParameter(streamInfo.u.data, PRIVATE_TAG_LEN);
         HalCameraStreamSetInfo(cameraId_, *streamId, &streamInfo);
 
-        uint32_t deviceId;
+        uint32_t deviceId = 0;
         HalCameraGetDeviceId(cameraId_, *streamId, &deviceId);
         int32_t ret = CameraCreateVideoEnc(fc, stream, deviceId, &codecHdl);
         if (ret != MEDIA_OK) {
@@ -462,7 +462,7 @@ int32_t PreviewAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
         return MEDIA_ERR;
     }
     Surface *surface = surfaceList.front();
-    StreamAttr stream;
+    StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_PREVIEW, FORMAT_YVU420);
     HalCameraStreamCreate(cameraId_, &stream, streamId);
     StreamInfo streamInfo;
@@ -519,10 +519,10 @@ int32_t CaptureAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     }
     Surface *surface = surfaceList.front();
 
-    StreamAttr stream;
+    StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_CAPTURE, FORMAT_YVU420);
 
-    uint32_t deviceId;
+    uint32_t deviceId = 0;
     HalCameraStreamCreate(cameraId_, &stream, streamId);
     streamId_ = *streamId;
     HalCameraGetDeviceId(cameraId_, *streamId, &deviceId);
@@ -619,7 +619,7 @@ int32_t CallbackAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     ImageFormat halImageFormat = Convert2HalImageFormat(imageFormat);
     MEDIA_INFO_LOG("Imageformat is %d", imageFormat);
     Surface *surface = surfaceList.front();
-    StreamAttr stream;
+    StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_CALLBACK, halImageFormat);
     HalCameraStreamCreate(cameraId_, &stream, streamId);
     streamId_ = *streamId;

@@ -45,7 +45,10 @@ public:
     void OnCameraStatusChange(int32_t ret, SvcIdentity *sid);
     void OnCameraConfigured(int32_t ret);
 private:
-    CameraServer() {}
+    CameraServer()
+    {
+        sid_.cookie = 0;
+    }
     SvcIdentity sid_;
 };
 } // namespace Media
