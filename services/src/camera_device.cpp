@@ -197,7 +197,8 @@ static int32_t CameraCreateJpegEnc(FrameConfig &fc, uint32_t srcDev, CODEC_HANDL
     auto surfaceList = fc.GetSurfaces();
     Surface *surface = surfaceList.front();
 
-    std::cout<<"------2: CameraCreateJpegEnc: surface width and height: "<<surface->GetWidth()<<", "<<surface->GetHeight()<<std::endl;
+    std::cout<<"------2: CameraCreateJpegEnc: surface width and height: "
+        <<surface->GetWidth()<<", "<<surface->GetHeight()<<std::endl;
     PicSize picSize = Convert2CodecSize(surface->GetWidth(), surface->GetHeight());
     param[paramIndex].key = KEY_VIDEO_PIC_SIZE;
     param[paramIndex].val = &picSize;
@@ -310,11 +311,10 @@ int32_t RecordAssistant::OnVencBufferAvailble(UINTPTR hComponent, UINTPTR dataIn
         if (ret != MEDIA_OK) {
             MEDIA_ERR_LOG("No available buffer in surface.");
 #ifdef __LINUX__
-        g_surface->CancelBuffer(surfaceBuf);
+            g_surface->CancelBuffer(surfaceBuf);
 #else
-        surface->CancelBuffer(surfaceBuf);
+            surface->CancelBuffer(surfaceBuf);
 #endif
-            
             break;
         }
         surfaceBuf->SetInt32(KEY_IS_SYNC_FRAME, (((buffer->flag & STREAM_FLAG_KEYFRAME) == 0) ? 0 : 1));
@@ -340,7 +340,6 @@ int32_t RecordAssistant::OnVencBufferAvailble(UINTPTR hComponent, UINTPTR dataIn
     if (CodecQueueOutput(hdl, buffer, 0, -1) != 0) {
         MEDIA_ERR_LOG("Codec queue output failed.");
     }
-
     return ret;
 }
 
@@ -519,7 +518,7 @@ int32_t CaptureAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     }
     Surface *surface = surfaceList.front();
 
-    StreamAttr stream = {};
+     StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_CAPTURE, FORMAT_YVU420);
 
     uint32_t deviceId = 0;
