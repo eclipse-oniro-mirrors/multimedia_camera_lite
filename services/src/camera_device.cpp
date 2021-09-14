@@ -518,7 +518,7 @@ int32_t CaptureAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     }
     Surface *surface = surfaceList.front();
 
-     StreamAttr stream = {};
+    StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_CAPTURE, FORMAT_YVU420);
 
     uint32_t deviceId = 0;
