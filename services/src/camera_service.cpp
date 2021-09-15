@@ -26,7 +26,7 @@ CameraService::CameraService() {}
 
 CameraService::~CameraService()
 {
-    int32_t ret = HalCameraDeinit();		// Smart lock add
+    int32_t ret = HalCameraDeinit();
     if (ret != 0) {
         MEDIA_ERR_LOG("HiCameraDeInit return failed ret(%d).", ret);
     }
@@ -40,7 +40,7 @@ CameraService *CameraService::GetInstance()
 
 void CameraService::Initialize()
 {
-    int32_t ret = HalCameraInit();			// Smart lock add
+    int32_t ret = HalCameraInit();
     if (ret != 0) {
         MEDIA_ERR_LOG("HiCameraInit failed. ret(%d)", ret);
     }
@@ -56,7 +56,7 @@ CameraAbility *CameraService::GetCameraAbility(std::string &cameraId)
     if (ability == nullptr) {
         return nullptr;
     }
-    uint32_t streamCapNum = 0;
+    uint32_t streamCapNum;
     StreamCap *streamCap = nullptr;
     int32_t ret = HalCameraGetStreamCapNum(atoi(cameraId.c_str()), &streamCapNum);
     streamCap = new StreamCap[streamCapNum];
@@ -66,27 +66,23 @@ CameraAbility *CameraService::GetCameraAbility(std::string &cameraId)
     ret = HalCameraGetStreamCap(atoi(cameraId.c_str()), streamCap, streamCapNum);
     list<CameraPicSize> range;
     for (int pos = 0; pos < streamCapNum; pos++) {
-        CameraPicSize tmpSize = {.width = (uint32_t)streamCap[pos].u.formatEnum.width, .height = (uint32_t)streamCap[pos].u.formatEnum.height};
+        CameraPicSize tmpSize = {.width = (uint32_t)streamCap[pos].u.formatEnum.width,
+            .height = (uint32_t)streamCap[pos].u.formatEnum.height};
         range.emplace_back(tmpSize);
     }
     ability->SetParameterRange(PARAM_KEY_SIZE, range);
-
     AbilityInfo cameraAbility = {};
     HalCameraGetAbility(atoi(cameraId.c_str()), &cameraAbility);
-    // Get supported AF Modes
     list<int32_t> afModes;
     for (int i = 0; i < cameraAbility.afModeNum; i++) {
         afModes.emplace_back(cameraAbility.afModes[i]);
     }
     ability->SetParameterRange(CAM_AF_MODE, afModes);
-
-    // Get supported AE Modes
     list<int32_t> aeModes;
     for (int i = 0; i < cameraAbility.aeModeNum; i++) {
         aeModes.emplace_back(cameraAbility.aeModes[i]);
     }
     ability->SetParameterRange(CAM_AE_MODE, aeModes);
-
     delete[] streamCap;
     deviceAbilityMap_.insert(pair<string, CameraAbility*>(cameraId, ability));
     return ability;
@@ -136,7 +132,7 @@ list<string> CameraService::GetCameraIdList()
 
 int32_t CameraService::CreateCamera(string cameraId)
 {
-    int32_t ret = HalCameraDeviceOpen((uint32_t)std::atoi(cameraId.c_str()));	// Smart lock add
+    int32_t ret = HalCameraDeviceOpen((uint32_t)std::atoi(cameraId.c_str()));
     if (ret != 0) {
         MEDIA_ERR_LOG("HalCameraDeviceOpen failed. ret(%d)", ret);
         return CameraServiceCallback::CAMERA_STATUS_CREATE_FAILED;
@@ -148,6 +144,7 @@ int32_t CameraService::CreateCamera(string cameraId)
     }
     if (device->Initialize() != MEDIA_OK) {
         MEDIA_FATAL_LOG("device Initialize failed.");
+        delete device;
         return MEDIA_ERR;
     }
     deviceMap_.insert(pair<string, CameraDevice*>(cameraId, device));
@@ -162,6 +159,5 @@ int32_t CameraService::CloseCamera(string cameraId)
     }
     return CameraServiceCallback::CAMERA_STATUS_CLOSE;
 }
-
 } // namespace Media
 } // namespace OHOS

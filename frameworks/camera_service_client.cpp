@@ -77,7 +77,11 @@ int CameraServiceClient::Callback(void* owner, int code, IpcIo *reply)
             list<CameraPicSize> supportSizeList;
             for (uint32_t i = 0; i < listSize; i++) {
                 CameraPicSize *cameraPicSize = static_cast<CameraPicSize*>(IpcIoPopFlatObj(reply, &size));
-                supportSizeList.emplace_back(*cameraPicSize);
+                if (cameraPicSize != nullptr) {
+                    supportSizeList.emplace_back(*cameraPicSize);    
+                } else {
+                    MEDIA_ERR_LOG("cameraPicSize is null");
+                }
             }
             // Get supported AfModes.
             uint32_t afListSize = IpcIoPopUint32(reply);
@@ -177,7 +181,7 @@ CameraAbility *CameraServiceClient::GetCameraAbility(string &cameraId)
     if (iter != deviceAbilityMap_.end()) {
         return iter->second;
     }
-    MEDIA_ERR_LOG("Get cameraAbility of camera %d from cameraService failded", cameraId.c_str());
+    MEDIA_ERR_LOG("Get cameraAbility of camera %s from cameraService failded", cameraId.c_str());
     return nullptr;
 }
 
@@ -205,7 +209,7 @@ CameraInfo *CameraServiceClient::GetCameraInfo(string &cameraId)
     if (iter != deviceInfoMap_.end()) {
         return iter->second;
     }
-    MEDIA_ERR_LOG("Get cameraInfo of camera %d from cameraService failded", cameraId.c_str());
+    MEDIA_ERR_LOG("Get cameraInfo of camera %s from cameraService failded", cameraId.c_str());
     return nullptr;
 }
 
