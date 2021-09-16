@@ -152,6 +152,7 @@ Recorder *SampleCreateRecorder()
     Recorder *recorder = new Recorder();
     if ((ret = recorder->SetVideoSource(source, sourceId)) != SUCCESS) {
         cout << "SetVideoSource failed." << ret << endl;
+        delete recorder;
         return nullptr;
     }
     if ((ret = recorder->SetVideoEncoder(sourceId, encoder)) != SUCCESS) {
@@ -218,7 +219,7 @@ class SampleFrameStateCallback : public FrameStateCallback {
      * @param size the size
      * @return save result
      */
-    int32_t SampleSaveCapture(string testPath, char *buffer, uint32_t size)
+    int32_t SampleSaveCapture(string testPath, const char *buffer, uint32_t size)
     {
         cout << "Start saving picture" << endl;
         string filePath = "";
@@ -382,13 +383,13 @@ public:
         UISurfaceView *surface = new UISurfaceView();
         int width = 960;
         int height = 480;
-        surface->SetPosition(0, 0, width, height);
-        surface->GetSurface()->SetWidthAndHeight(WIDTH, HEIGHT);
         if (surface == nullptr) {
             cout << "CreateSurface failed" << endl;
             delete fc;
             return;
         }
+        surface->SetPosition(0, 0, width, height);
+        surface->GetSurface()->SetWidthAndHeight(WIDTH, HEIGHT);
         fc->AddSurface(*(surface->GetSurface()));
         static int cnt = 3;
         while (cam_ == nullptr) {
@@ -403,6 +404,7 @@ public:
             delete fc;
             return;
         }
+        delete surface;
         isPreviewing_ = true;
         g_onPreviewFlag = true;
         cout << "camera start preview succeed." << endl;
@@ -1443,6 +1445,7 @@ HWTEST_F(CameraLiteTest, Test_GetSurface_001, Level1)
     surface->SetWidthAndHeight(1920, 1080);
     EXPECT_EQ(1920, surface->GetWidth());
     EXPECT_EQ(1080, surface->GetHeight());
+    delete surface;
 }
 
 HWTEST_F(CameraLiteTest, Test_GetSurface_002, Level1)
@@ -1545,6 +1548,7 @@ HWTEST_F(CameraLiteTest, PrfTest_GetSurfaces_002, Level1)
     }
     int64_t expectTime = 1000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    delete surface;
 }
 
 HWTEST_F(CameraLiteTest, PrfTest_GetSurfaces_003, Level1)
