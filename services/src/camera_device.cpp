@@ -197,7 +197,8 @@ static int32_t CameraCreateJpegEnc(FrameConfig &fc, uint32_t srcDev, CODEC_HANDL
     auto surfaceList = fc.GetSurfaces();
     Surface *surface = surfaceList.front();
 
-    std::cout<<"------2: CameraCreateJpegEnc: surface width and height: "<<surface->GetWidth()<<", "<<surface->GetHeight()<<std::endl;
+    std::cout<<"------2: CameraCreateJpegEnc: surface width and height: "
+        <<surface->GetWidth()<<", "<<surface->GetHeight()<<std::endl;
     PicSize picSize = Convert2CodecSize(surface->GetWidth(), surface->GetHeight());
     param[paramIndex].key = KEY_VIDEO_PIC_SIZE;
     param[paramIndex].val = &picSize;
@@ -310,11 +311,10 @@ int32_t RecordAssistant::OnVencBufferAvailble(UINTPTR hComponent, UINTPTR dataIn
         if (ret != MEDIA_OK) {
             MEDIA_ERR_LOG("No available buffer in surface.");
 #ifdef __LINUX__
-        g_surface->CancelBuffer(surfaceBuf);
+            g_surface->CancelBuffer(surfaceBuf);
 #else
-        surface->CancelBuffer(surfaceBuf);
+            surface->CancelBuffer(surfaceBuf);
 #endif
-            
             break;
         }
         surfaceBuf->SetInt32(KEY_IS_SYNC_FRAME, (((buffer->flag & STREAM_FLAG_KEYFRAME) == 0) ? 0 : 1));
@@ -340,7 +340,6 @@ int32_t RecordAssistant::OnVencBufferAvailble(UINTPTR hComponent, UINTPTR dataIn
     if (CodecQueueOutput(hdl, buffer, 0, -1) != 0) {
         MEDIA_ERR_LOG("Codec queue output failed.");
     }
-
     return ret;
 }
 
@@ -356,7 +355,7 @@ int32_t RecordAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     }
     for (auto &surface : surfaceList) {
         CODEC_HANDLETYPE codecHdl = nullptr;
-        StreamAttr stream;
+        StreamAttr stream = {};
 #ifdef __LINUX__
         StreamAttrInitialize(&stream, g_surface, STREAM_VIDEO, FORMAT_YVU420);
 #else
@@ -370,7 +369,7 @@ int32_t RecordAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
         fc.GetVendorParameter(streamInfo.u.data, PRIVATE_TAG_LEN);
         HalCameraStreamSetInfo(cameraId_, *streamId, &streamInfo);
 
-        uint32_t deviceId;
+        uint32_t deviceId = 0;
         HalCameraGetDeviceId(cameraId_, *streamId, &deviceId);
         int32_t ret = CameraCreateVideoEnc(fc, stream, deviceId, &codecHdl);
         if (ret != MEDIA_OK) {
@@ -462,7 +461,7 @@ int32_t PreviewAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
         return MEDIA_ERR;
     }
     Surface *surface = surfaceList.front();
-    StreamAttr stream;
+    StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_PREVIEW, FORMAT_YVU420);
     HalCameraStreamCreate(cameraId_, &stream, streamId);
     StreamInfo streamInfo;
@@ -519,10 +518,10 @@ int32_t CaptureAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     }
     Surface *surface = surfaceList.front();
 
-    StreamAttr stream;
+    StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_CAPTURE, FORMAT_YVU420);
 
-    uint32_t deviceId;
+    uint32_t deviceId = 0;
     HalCameraStreamCreate(cameraId_, &stream, streamId);
     streamId_ = *streamId;
     HalCameraGetDeviceId(cameraId_, *streamId, &deviceId);
@@ -619,7 +618,7 @@ int32_t CallbackAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     ImageFormat halImageFormat = Convert2HalImageFormat(imageFormat);
     MEDIA_INFO_LOG("Imageformat is %d", imageFormat);
     Surface *surface = surfaceList.front();
-    StreamAttr stream;
+    StreamAttr stream = {};
     StreamAttrInitialize(&stream, surface, STREAM_CALLBACK, halImageFormat);
     HalCameraStreamCreate(cameraId_, &stream, streamId);
     streamId_ = *streamId;

@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http ://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -137,13 +137,13 @@ void CameraServer::CreateCamera(IpcIo *req, IpcIo *reply)
     string cameraId((const char*)(IpcIoPopString(req, &sz)));
     int32_t cameraStatus = CameraService::GetInstance()->CreateCamera(cameraId);
     SvcIdentity *sid = IpcIoPopSvc(req);
-#ifdef __LINUX__
-    BinderAcquire(sid->ipcContext, sid->handle);
-#endif
     if (sid == nullptr) {
         MEDIA_ERR_LOG("sid is null, failed.");
         return;
     }
+#ifdef __LINUX__
+    BinderAcquire(sid->ipcContext, sid->handle);
+#endif
     OnCameraStatusChange(cameraStatus, sid);
 }
 
@@ -154,13 +154,13 @@ void CameraServer::CloseCamera(IpcIo *req, IpcIo *reply)
     string cameraId((const char*)(IpcIoPopString(req, &sz)));
     int32_t cameraStatus = CameraService::GetInstance()->CloseCamera(cameraId);
     SvcIdentity *sid = IpcIoPopSvc(req);
-#ifdef __LINUX__
-    BinderAcquire(sid->ipcContext, sid->handle);
-#endif
     if (sid == nullptr) {
         MEDIA_ERR_LOG("sid is null, failed.");
         return;
     }
+#ifdef __LINUX__
+    BinderAcquire(sid->ipcContext, sid->handle);
+#endif
     OnCameraStatusChange(cameraStatus, sid);
 }
 
@@ -176,7 +176,12 @@ void CameraServer::SetCameraConfig(IpcIo *req, IpcIo *reply)
 
 void CameraServer::SetCameraCallback(IpcIo *req, IpcIo *reply)
 {
-    sid_ = *IpcIoPopSvc(req);
+    SvcIdentity *sid = IpcIoPopSvc(req);
+    if (sid == nullptr) {
+        MEDIA_ERR_LOG("sid is null, failed.");
+        return;
+    }
+    sid_ = *sid;
 #ifdef __LINUX__
     BinderAcquire(sid_.ipcContext, sid_.handle);
 #endif
@@ -274,6 +279,7 @@ void CameraServer::StopLoopingCapture(IpcIo *req, IpcIo *reply)
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
     if (device_ == nullptr) {
         MEDIA_INFO_LOG("device_ is  null in camera_server.cpp!");
+        return;
     }
     device_->StopLoopingCapture();
 }
