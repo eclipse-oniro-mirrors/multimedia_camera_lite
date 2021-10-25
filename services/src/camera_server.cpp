@@ -220,6 +220,7 @@ FrameConfig *DeserializeFrameConfig(IpcIo &io)
     }
     uint8_t *data = (uint8_t *)dataBuff->buff;
     fc->SetVendorParameter((uint8_t *)dataBuff->buff, dataBuff->buffSz);
+    FreeBuffer(nullptr, dataBuff->buff);
     return fc;
 }
 
