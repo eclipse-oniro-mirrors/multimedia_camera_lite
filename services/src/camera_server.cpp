@@ -77,7 +77,8 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
             CameraServer::GetInstance()->setResolution(req, reply);
             break;
         case CAMERA_SERVER_SET_PRIVATE:
-            CameraServer::GetInstance()->SetPrivate(req, reply);    
+            CameraServer::GetInstance()->SetPrivate(req, reply);
+            break; 
         default:
             MEDIA_ERR_LOG("code not support:%d!", funcId);
             break;
@@ -260,6 +261,7 @@ FrameConfig *DeserializeFrameConfig(IpcIo &io)
     }
     uint8_t *data = (uint8_t *)dataBuff->buff;
     fc->SetVendorParameter((uint8_t *)dataBuff->buff, dataBuff->buffSz);
+    FreeBuffer(nullptr, dataBuff->buff);
     return fc;
 }
 

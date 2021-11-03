@@ -33,6 +33,7 @@ public:
     CameraDevice *GetCameraDevice(std::string &cameraId);
     int32_t CreateCamera(std::string cameraId);
     int32_t CloseCamera(string cameraId);
+    int32_t SetPrivate(uint32_t reqType, void *reqData, uint32_t reqLen, void *respData, uint32_t *respSize);
     list<string> GetCameraIdList();
 private:
     CameraService();

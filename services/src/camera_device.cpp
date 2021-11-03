@@ -46,6 +46,8 @@ const int32_t KEY_TIME_US = 2;
 const int32_t IMAGE_WIDTH = 3;       // "DATA_PIX_FORMAT"
 const int32_t IMAGE_HEIGHT = 4;       // "DATA_PIX_FORMAT"
 const int32_t IMAGE_SIZE = 5;       // "DATA_PIX_FORMAT"
+const int32_t IMAGE_SIZE = 6;       // "DATA_PIX_FORMAT"
+const int32_t IMAGE_SIZE = 7;       // "DATA_PIX_FORMAT"
 const int32_t DELAY_TIME_ONE_FRAME = 30000;
 
 namespace OHOS {
@@ -440,6 +442,43 @@ int32_t RecordAssistant::Stop()
     return MEDIA_OK;
 }
 
+int32_t RecordAssistant::SetRecordCodecFrameRate(uint32_t frameRate)
+{
+    Param param = {.key = KEY_VIDEO_FRAME_RATE, .val = (void *)&frameRate, .size = sizeof(uint32_t)};
+    int32_t ret = CodecSetParameter(codecHdlCache, &param, 1);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("Set codec frame rate failed.(ret=%d)", ret);
+        return ret;
+    }
+    return MEDIA_OK;
+}
+
+int32_t RecordAssistant::SetRecordCodecBitRate(uint32_t bitRate)
+{
+
+    Param param = {.key = KEY_BITRATE, .val = (void *)&bitRate, .size = sizeof(uint32_t)};
+    MEDIA_ERR_LOG("bitRate is %d", bitRate);
+    int32_t ret = CodecSetParameter(codecHdlCache, &param, 1);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("Set codec bit rate failed.(ret=%d)", ret);
+        return ret;
+    }
+    return MEDIA_OK;
+}
+
+int32_t RecordAssistant::SetRecordCodecResolution(uint32_t width, uint32_t height)
+{
+    PicSize picSize = Convert2CodecSize((int32_t)width, (int32_t)height);
+    MEDIA_DEBUG_LOG("picSize=%d", picSize);
+    Param param = {.key = KEY_VIDEO_PIC_SIZE, .val = (void *)&picSize, .size = sizeof(uint32_t)};
+    int32_t ret = CodecSetParameter(codecHdlCache, &param, 1);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("Set codec resolution failed.(ret=%d)", ret);
+        return ret;
+    }
+    return MEDIA_OK;
+}
+
 static void GetSurfaceRect(Surface *surface, IRect *attr)
 {
     attr->x = std::stoi(surface->GetUserData(string("region_position_x")));
@@ -469,7 +508,6 @@ int32_t PreviewAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     streamInfo.type = STREAM_INFO_POS;
     streamInfo.u.pos.x = std::stoi(surface->GetUserData(string("region_position_x")));
     streamInfo.u.pos.y = std::stoi(surface->GetUserData(string("region_position_y")));
-
     HalCameraStreamSetInfo(cameraId_, *streamId, &streamInfo);
     streamId_ = *streamId;
     return MEDIA_OK;
@@ -627,6 +665,10 @@ int32_t CallbackAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
     streamId_ = *streamId;
     capSurface_ = surface;
     state_ = LOOP_READY;
+    StreamInfo streamInfo;
+    streamInfo.type = STERAM_INFO_PRIVATE;
+    fc.GetVendorParameter(streamInfo.u.data, PRIVATE_TAG_LEN);
+    HalCameraStreamSetInfo(cameraId_, *streamId, &streamInfo);
     return MEDIA_OK;
 }
 
@@ -656,14 +698,14 @@ void* CallbackAssistant::StreamCopyProcess(void *arg)
         return nullptr;
     }
     while (assistant->state_ == LOOP_LOOPING) {
-        SurfaceBuffer *surfaceBuf = assistant->capSurface_->RequestBuffer();
-        if (surfaceBuf == nullptr) {
-            usleep(DELAY_TIME_ONE_FRAME);
-            continue;
-        }
         HalBuffer streamBuffer;
         int32_t ret = HalCameraDequeueBuf(assistant->cameraId_, assistant->streamId_, &streamBuffer);
         if (ret != MEDIA_OK) {
+            usleep(DELAY_TIME_ONE_FRAME);
+            continue;
+        }
+        SurfaceBuffer *surfaceBuf = assistant->capSurface_->RequestBuffer();
+        if (surfaceBuf == nullptr) {
             usleep(DELAY_TIME_ONE_FRAME);
             continue;
         }
@@ -702,6 +744,9 @@ void* CallbackAssistant::StreamCopyProcess(void *arg)
 int32_t CallbackAssistant::Stop()
 {
     MEDIA_DEBUG_LOG("CallbackAssistantNo support method.");
+    if (state_ != LOOP_LOOPING) {
+        return MEDIA_ERR;
+    }
     state_ = LOOP_STOP;
     pthread_join(threadId, NULL);
     HalCameraStreamOff(cameraId_, streamId_);

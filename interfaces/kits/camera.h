@@ -138,6 +138,21 @@ public:
         return -1;
     }
 
+    virtual int32_t setFrameRate(uint32_t frameRate)
+    {
+        return -1;
+    }
+
+    virtual int32_t setBitRate(uint32_t bitRate)
+    {
+        return -1;
+    }
+
+    virtual int32_t setResolution(uint32_t width, uint32_t height)
+    {
+        return -1;
+    }
+
     /**
      * @brief Releases the <b>Camera</b> object and associated resources.
      *
