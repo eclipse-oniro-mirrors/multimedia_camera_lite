@@ -47,9 +47,9 @@ typedef enum {
     /* Depth camera */
     TRUE_DEPTH,
     /* Fisheye camera */
-    FISH_EYE
+    FISH_EYE,
     /* Other camera */
-    OTHER_TYPE,
+    OTHER_TYPE
 } CameraType;
 
 typedef enum {
