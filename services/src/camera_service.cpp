@@ -160,10 +160,5 @@ int32_t CameraService::CloseCamera(string cameraId)
     }
     return CameraServiceCallback::CAMERA_STATUS_CLOSE;
 }
-
-int32_t CameraService::SetPrivate(uint32_t reqType, void *reqData, uint32_t reqLen, void *respData, uint32_t *respSize)
-{
-    return HalCameraSetPrivate(reqType, reqData, reqLen, respData, respSize);
-}
 } // namespace Media
 } // namespace OHOS

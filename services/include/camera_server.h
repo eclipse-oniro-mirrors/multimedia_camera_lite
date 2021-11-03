@@ -47,7 +47,6 @@ public:
     void setFrameRate(IpcIo *req, IpcIo *reply);
     void setBitRate(IpcIo *req, IpcIo *reply);
     void setResolution(IpcIo *req, IpcIo *reply);
-    void setPrivate(IpcIo *req, IpcIo *reply);
 private:
     CameraServer()
     {

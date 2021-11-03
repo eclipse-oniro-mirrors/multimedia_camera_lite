@@ -76,8 +76,6 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
         case CAMERA_SERVER_SET_CODEC_RESOLUTION:
             CameraServer::GetInstance()->setResolution(req, reply);
             break;
-        case CAMERA_SERVER_SET_PRIVATE:
-            CameraServer::GetInstance()->SetPrivate(req, reply);
             break; 
         default:
             MEDIA_ERR_LOG("code not support:%d!", funcId);
@@ -464,25 +462,6 @@ void CameraServer::setResolution(IpcIo *req, IpcIo *reply)
     uint32_t width = IpcIoPopUint32(req);
     uint32_t height = IpcIoPopUint32(req);
     device_->SetRecordCodecResolution(width, height);
-}
-
-void CameraServer::SetPrivate(IpcIo *req, IpcIo *reply)
-{
-    uint32_t type = IpcIoPopUint32(req);
-    uint32_t size = 0;
-    void* data = IpcIoPopFlatObj(req, &size);
-    int maxLen = 1024;
-    if (size > maxLen) {
-        MEDIA_ERR_LOG("SetPrivate failed, size[%u] is bigger than 1024", size);
-        return;
-    }
-    uint8_t resp[maxLen];
-    int32_t retCode = CameraService::GetInstance()->SetPrivate(type, data, size, resp, &size);
-
-    IpcIoPushUint32(reply, type);
-    IpcIoPushInt32(reply, retCode);
-    IpcIoPushFlatObj(reply, resp, size);
-    MEDIA_INFO_LOG("SetPrivate Req:type=%u, Resp:retCode=%d, len=%u", type, retCode, size);
 }
 } // namespace Media
 } // namespace OHOS
