@@ -98,7 +98,7 @@ int CameraServiceClient::Callback(void* owner, int code, IpcIo *reply)
 
             CameraAbility *cameraAbility = new (nothrow) CameraAbility;
             if (cameraAbility != nullptr) {
-                cameraAbility->SetParameterRange(CAM_IMAGE_YUV420, supportSizeList);
+                cameraAbility->SetParameterRange(supportProperties, supportSizeList);
                 cameraAbility->SetParameterRange(CAM_AF_MODE, afModeList);
                 cameraAbility->SetParameterRange(CAM_AE_MODE, aeModeList);
                 client->deviceAbilityMap_.insert(

@@ -76,6 +76,8 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
         case CAMERA_SERVER_SET_CODEC_RESOLUTION:
             CameraServer::GetInstance()->setResolution(req, reply);
             break;
+        case CAMERA_SERVER_SET_PRIVATE:
+            CameraServer::GetInstance()->SetPrivate(req, reply);    
         default:
             MEDIA_ERR_LOG("code not support:%d!", funcId);
             break;
@@ -203,6 +205,10 @@ void CameraServer::SetCameraConfig(IpcIo *req, IpcIo *reply)
     }
     string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_ERR_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     int32_t setStatus = device_->SetCameraConfig();
     IpcIoPushInt32(reply, setStatus);
     OnCameraConfigured(setStatus);
@@ -269,6 +275,10 @@ void CameraServer::SetFrameConfig(IpcIo *req, IpcIo *reply)
     int32_t streamId = IpcIoPopInt32(req);
     MEDIA_ERR_LOG("SetFrameConfig streamId(%d).", streamId);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_ERR_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     FrameConfig *fc = DeserializeFrameConfig(*req);
     if (fc == nullptr) {
         MEDIA_ERR_LOG("Deserialize frame config failed.");
@@ -288,6 +298,10 @@ void CameraServer::TriggerLoopingCapture(IpcIo *req, IpcIo *reply)
     }
     string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_ERR_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     FrameConfig *fc = DeserializeFrameConfig(*req);
     if (fc == nullptr) {
         MEDIA_ERR_LOG("Deserialize frame config failed.");
@@ -309,6 +323,10 @@ void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply)
     }
     string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_ERR_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     FrameConfig *fc = DeserializeFrameConfig(*req);
     if (fc == nullptr) {
         MEDIA_ERR_LOG("Deserialize frame config failed.");
@@ -400,6 +418,10 @@ void CameraServer::setFrameRate(IpcIo *req, IpcIo *reply)
     }
     string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_ERR_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     uint32_t frameRate = IpcIoPopUint32(req);
     MEDIA_ERR_LOG("frameRate is %d", frameRate);
     device_->SetRecordCodecFrameRate(frameRate);
@@ -415,6 +437,10 @@ void CameraServer::setBitRate(IpcIo *req, IpcIo *reply)
     }
     string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_ERR_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     uint32_t bitRate = IpcIoPopUint32(req);
     device_->SetRecordCodecBitRate(bitRate);
 }
@@ -429,6 +455,10 @@ void CameraServer::setResolution(IpcIo *req, IpcIo *reply)
     }
     string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_ERR_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     uint32_t width = IpcIoPopUint32(req);
     uint32_t height = IpcIoPopUint32(req);
     device_->SetRecordCodecResolution(width, height);
@@ -447,9 +477,9 @@ void CameraServer::SetPrivate(IpcIo *req, IpcIo *reply)
     uint8_t resp[maxLen];
     int32_t retCode = CameraService::GetInstance()->SetPrivate(type, data, size, resp, &size);
 
-    IpcIoPopUint32(reply, type);
-    IpcIoPopInt32(reply, retCode);
-    IpcIoPopFlatObj(reply, resp, size);
+    IpcIoPushUint32(reply, type);
+    IpcIoPushInt32(reply, retCode);
+    IpcIoPushFlatObj(reply, resp, size);
     MEDIA_INFO_LOG("SetPrivate Req:type=%u, Resp:retCode=%d, len=%u", type, retCode, size);
 }
 } // namespace Media

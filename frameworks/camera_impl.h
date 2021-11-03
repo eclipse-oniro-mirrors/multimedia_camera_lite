@@ -48,7 +48,7 @@ public:
     void OnConfigured(int32_t ret, CameraConfig &config);
     void RegistCb(CameraStateCallback &callback, EventHandler &handler);
     int32_t setFrameRate(uint32_t frameRate) override;
-    int32_t setBitRate(uint32_t bitrate) override;
+    int32_t setBitRate(uint32_t bitRate) override;
     int32_t setResolution(uint32_t width, uint32_t height) override;
 
 private:

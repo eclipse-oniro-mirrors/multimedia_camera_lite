@@ -222,10 +222,10 @@ int32_t CameraImpl::setFrameRate(uint32_t frameRate)
     return deviceClient_->setFrameRate(frameRate);
 }
 
-int32_t CameraImpl::setBitRate(uint32_t bitrate)
+int32_t CameraImpl::setBitRate(uint32_t bitRate)
 {
     deviceClient_->SetCameraId(id_);
-    return deviceClient_->setBitRate(bitrate);
+    return deviceClient_->setBitRate(bitRate);
 }
 
 int32_t CameraImpl::setResolution(uint32_t width, uint32_t height)
