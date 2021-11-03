@@ -46,8 +46,8 @@ const int32_t KEY_TIME_US = 2;
 const int32_t IMAGE_WIDTH = 3;       // "DATA_PIX_FORMAT"
 const int32_t IMAGE_HEIGHT = 4;       // "DATA_PIX_FORMAT"
 const int32_t IMAGE_SIZE = 5;       // "DATA_PIX_FORMAT"
-const int32_t IMAGE_SIZE = 6;       // "DATA_PIX_FORMAT"
-const int32_t IMAGE_SIZE = 7;       // "DATA_PIX_FORMAT"
+const int32_t STRIDE0 = 6;       // "DATA_PIX_FORMAT"
+const int32_t STRIDE1 = 7;       // "DATA_PIX_FORMAT"
 const int32_t DELAY_TIME_ONE_FRAME = 30000;
 
 namespace OHOS {
