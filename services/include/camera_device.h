@@ -68,6 +68,10 @@ public:
     vector<list<Surface *>> vencSurfaces_;
     static int OnVencBufferAvailble(UINTPTR hComponent, UINTPTR dataIn, OutputInfo *buffer);
     static CodecCallback recordCodecCb_;
+    CODEC_HANDLETYPE codecHdlCache;
+    int32_t SetRecordCodecFrameRate(uint32_t frameRate);
+    int32_t SetRecordCodecBitRate(uint32_t bitRate);
+    int32_t SetRecordCodecResolution(uint32_t width, uint32_t height);
 };
 
 class PreviewAssistant : public DeviceAssistant {
@@ -114,6 +118,15 @@ public:
     void StopLoopingCapture();
     int32_t TriggerSingleCapture(FrameConfig &fc, uint32_t *streamId);
     uint32_t GetCameraId();
+    int32_t SetRecordCodecFrameRate(uint32_t frameRate) {
+        return recordAssistant_.SetRecordCodecFrameRate(frameRate);
+    }
+    int32_t SetRecordCodecBitRate(uint32_t bitRate) {
+        return recordAssistant_.SetRecordCodecBitRate(bitRate);
+    }
+    int32_t SetRecordCodecResolution(uint32_t width, uint32_t height) {
+        return recordAssistant_.SetRecordCodecResolution(width, height);
+    }
 private:
     uint32_t cameraId;
     RecordAssistant recordAssistant_;

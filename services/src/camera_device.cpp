@@ -376,6 +376,7 @@ int32_t RecordAssistant::SetFrameConfig(FrameConfig &fc, uint32_t *streamId)
             MEDIA_ERR_LOG("Cannot create suitble video encoder.");
             return MEDIA_ERR;
         }
+        codecHdlCache = codecHdl;
         ret = CodecSetCallback(codecHdl, &recordCodecCb_, reinterpret_cast<UINTPTR>(this));
         if (ret != 0) {
             MEDIA_ERR_LOG("Set codec callback failed.(ret=%d)", ret);
@@ -592,10 +593,12 @@ int32_t CaptureAssistant::Start(uint32_t streamId)
 
     CodecStop(vencHdl_);
     CodecDestroy(vencHdl_);
+    if (state_ != LOOP_LOOPING) {
+        return MEDIA_ERR;
+    }
+    state_ = LOOP_STOP;
     HalCameraStreamOff(cameraId_, streamId);
     HalCameraStreamDestroy(cameraId_, streamId);
-    state_ = LOOP_STOP;
-
     return ret;
 }
 
@@ -678,6 +681,8 @@ void* CallbackAssistant::StreamCopyProcess(void *arg)
         surfaceBuf->SetInt32(IMAGE_WIDTH, streamBuffer.width);
         surfaceBuf->SetInt32(IMAGE_HEIGHT, streamBuffer.height);
         surfaceBuf->SetInt32(IMAGE_SIZE, streamBuffer.size);
+        surfaceBuf->SetInt32(STRIDE0, streamBuffer.stride0);
+        surfaceBuf->SetInt32(STRIDE1, streamBuffer.stride1);
 
         if (assistant->capSurface_->FlushBuffer(surfaceBuf) != 0) {
             MEDIA_ERR_LOG("Flush surface failed.");
@@ -786,6 +791,7 @@ void CameraDevice::StopLoopingCapture()
     MEDIA_INFO_LOG("Stop looping capture in camera_device.cpp");
     previewAssistant_.Stop();
     recordAssistant_.Stop();
+    callbackAssistant_.Stop();
 }
 
 int32_t CameraDevice::TriggerSingleCapture(FrameConfig &fc, uint32_t *streamId)

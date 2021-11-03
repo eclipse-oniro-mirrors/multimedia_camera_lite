@@ -126,9 +126,14 @@ int CameraServiceClient::Callback(void* owner, int code, IpcIo *reply)
             uint32_t listSize = IpcIoPopUint32(reply);
             for (uint32_t i = 0; i < listSize; i++) {
                 size_t sz;
-                string cameraId((const char*)(IpcIoPopString(reply, &sz)));
-                client->list_.emplace_back(cameraId);
-                MEDIA_INFO_LOG("Callback : cameraId %s", cameraId.c_str());
+                uint8_t *id = IpcIoPopString(reply, &sz);
+                if (id != nullptr) {
+                    string cameraId((const char*)id);
+                    client->list_.emplace_back(cameraId);
+                    MEDIA_INFO_LOG("Callback : cameraId %s", cameraId.c_str());
+                } else {
+                    MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_service_client!");
+                }
             }
             break;
         }

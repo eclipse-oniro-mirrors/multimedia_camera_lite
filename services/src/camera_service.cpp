@@ -127,6 +127,7 @@ list<string> CameraService::GetCameraIdList()
     for (uint32_t pos = 0; pos < camNum; pos++) {
         cameraStrList.push_back(to_string(cameraList[pos]));
     }
+    delete []cameraList;
     return cameraStrList;
 }
 
@@ -158,6 +159,11 @@ int32_t CameraService::CloseCamera(string cameraId)
         MEDIA_ERR_LOG("HalCameraDeviceClose failed. ret(%d)", ret);
     }
     return CameraServiceCallback::CAMERA_STATUS_CLOSE;
+}
+
+int32_t CameraService::SetPrivate(uint32_t reqType, void *reqData, uint32_t reqLen, void *respData, uint32_t *respSize)
+{
+    return HalCameraSetPrivate(reqType, reqData, reqLen, respData, respSize);
 }
 } // namespace Media
 } // namespace OHOS

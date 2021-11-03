@@ -215,5 +215,23 @@ void CameraImpl::RegistCb(CameraStateCallback &callback, EventHandler &handler)
     handler_ = &handler;
     stateCb_ = &callback;
 }
+
+int32_t CameraImpl::setFrameRate(uint32_t frameRate)
+{
+    deviceClient_->SetCameraId(id_);
+    return deviceClient_->setFrameRate(frameRate);
+}
+
+int32_t CameraImpl::setBitRate(uint32_t bitrate)
+{
+    deviceClient_->SetCameraId(id_);
+    return deviceClient_->setBitRate(bitrate);
+}
+
+int32_t CameraImpl::setResolution(uint32_t width, uint32_t height)
+{
+    deviceClient_->SetCameraId(id_);
+    return deviceClient_->setResolution(width, height);
+}
 } // namespace Media
 } // namespace OHOS

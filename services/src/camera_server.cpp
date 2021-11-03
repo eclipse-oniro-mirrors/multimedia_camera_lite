@@ -67,6 +67,15 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
         case CAMERA_SERVER_SET_CAMERA_CALLBACK:
             CameraServer::GetInstance()->SetCameraCallback(req, reply);
             break;
+        case CAMERA_SERVER_SET_CODEC_FRAME_RATE:
+            CameraServer::GetInstance()->setFrameRate(req, reply);
+            break;
+        case CAMERA_SERVER_SET_CODEC_BIT_RATE:
+            CameraServer::GetInstance()->setBitRate(req, reply);
+            break;
+        case CAMERA_SERVER_SET_CODEC_RESOLUTION:
+            CameraServer::GetInstance()->setResolution(req, reply);
+            break;
         default:
             MEDIA_ERR_LOG("code not support:%d!", funcId);
             break;
@@ -81,7 +90,12 @@ void CameraServer::InitCameraServer()
 void CameraServer::GetCameraAbility(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     CameraAbility *ability = CameraService::GetInstance()->GetCameraAbility(cameraId);
     if (ability == nullptr) {
         return;
@@ -113,7 +127,12 @@ void CameraServer::GetCameraAbility(IpcIo *req, IpcIo *reply)
 void CameraServer::GetCameraInfo(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     CameraInfo *info = CameraService::GetInstance()->GetCameraInfo(cameraId);
     if (info == nullptr) {
         return;
@@ -134,7 +153,12 @@ void CameraServer::GetCameraIdList(IpcIo *req, IpcIo *reply)
 void CameraServer::CreateCamera(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     int32_t cameraStatus = CameraService::GetInstance()->CreateCamera(cameraId);
     SvcIdentity *sid = IpcIoPopSvc(req);
     if (sid == nullptr) {
@@ -151,7 +175,12 @@ void CameraServer::CloseCamera(IpcIo *req, IpcIo *reply)
 {
     MEDIA_INFO_LOG("CloseCamera enter.");
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     int32_t cameraStatus = CameraService::GetInstance()->CloseCamera(cameraId);
     SvcIdentity *sid = IpcIoPopSvc(req);
     if (sid == nullptr) {
@@ -167,7 +196,12 @@ void CameraServer::CloseCamera(IpcIo *req, IpcIo *reply)
 void CameraServer::SetCameraConfig(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
     int32_t setStatus = device_->SetCameraConfig();
     IpcIoPushInt32(reply, setStatus);
@@ -226,7 +260,12 @@ FrameConfig *DeserializeFrameConfig(IpcIo &io)
 void CameraServer::SetFrameConfig(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
-    string cameraId((const char *)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     int32_t streamId = IpcIoPopInt32(req);
     MEDIA_ERR_LOG("SetFrameConfig streamId(%d).", streamId);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
@@ -242,7 +281,12 @@ void CameraServer::SetFrameConfig(IpcIo *req, IpcIo *reply)
 void CameraServer::TriggerLoopingCapture(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
-    string cameraId((const char*)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
     FrameConfig *fc = DeserializeFrameConfig(*req);
     if (fc == nullptr) {
@@ -258,7 +302,12 @@ void CameraServer::TriggerLoopingCapture(IpcIo *req, IpcIo *reply)
 void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply)
 {
     size_t sz;
-    string cameraId((const char *)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
     FrameConfig *fc = DeserializeFrameConfig(*req);
     if (fc == nullptr) {
@@ -275,7 +324,12 @@ void CameraServer::StopLoopingCapture(IpcIo *req, IpcIo *reply)
 {
     MEDIA_INFO_LOG("StopLoopingCapture in camera_server.cpp!");
     size_t sz;
-    string cameraId((const char *)(IpcIoPopString(req, &sz)));
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
     if (device_ == nullptr) {
         MEDIA_INFO_LOG("device_ is  null in camera_server.cpp!");
@@ -334,6 +388,69 @@ void CameraServer::OnCameraConfigured(int32_t ret)
     if (ans != LITEIPC_OK) {
         MEDIA_ERR_LOG("Camera config callback : on trigger looping capture finished failed.");
     }
+}
+
+void CameraServer::setFrameRate(IpcIo *req, IpcIo *reply)
+{
+    size_t sz;
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
+    CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    uint32_t frameRate = IpcIoPopUint32(req);
+    MEDIA_ERR_LOG("frameRate is %d", frameRate);
+    device_->SetRecordCodecFrameRate(frameRate);
+}
+
+void CameraServer::setBitRate(IpcIo *req, IpcIo *reply)
+{
+    size_t sz;
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
+    CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    uint32_t bitRate = IpcIoPopUint32(req);
+    device_->SetRecordCodecBitRate(bitRate);
+}
+
+void CameraServer::setResolution(IpcIo *req, IpcIo *reply)
+{
+    size_t sz;
+    uint8_t *id = IpcIoPopString(req, &sz);
+    if (id == nullptr) {
+        MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_server");
+        return;
+    }
+    string cameraId((const char*)id);
+    CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    uint32_t width = IpcIoPopUint32(req);
+    uint32_t height = IpcIoPopUint32(req);
+    device_->SetRecordCodecResolution(width, height);
+}
+
+void CameraServer::SetPrivate(IpcIo *req, IpcIo *reply)
+{
+    uint32_t type = IpcIoPopUint32(req);
+    uint32_t size = 0;
+    void* data = IpcIoPopFlatObj(req, &size);
+    int maxLen = 1024;
+    if (size > maxLen) {
+        MEDIA_ERR_LOG("SetPrivate failed, size[%u] is bigger than 1024", size);
+        return;
+    }
+    uint8_t resp[maxLen];
+    int32_t retCode = CameraService::GetInstance()->SetPrivate(type, data, size, resp, &size);
+
+    IpcIoPopUint32(reply, type);
+    IpcIoPopInt32(reply, retCode);
+    IpcIoPopFlatObj(reply, resp, size);
+    MEDIA_INFO_LOG("SetPrivate Req:type=%u, Resp:retCode=%d, len=%u", type, retCode, size);
 }
 } // namespace Media
 } // namespace OHOS
