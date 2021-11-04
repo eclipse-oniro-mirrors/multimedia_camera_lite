@@ -455,7 +455,6 @@ int32_t RecordAssistant::SetRecordCodecFrameRate(uint32_t frameRate)
 
 int32_t RecordAssistant::SetRecordCodecBitRate(uint32_t bitRate)
 {
-
     Param param = {.key = KEY_BITRATE, .val = (void *)&bitRate, .size = sizeof(uint32_t)};
     MEDIA_ERR_LOG("bitRate is %d", bitRate);
     int32_t ret = CodecSetParameter(codecHdlCache, &param, 1);

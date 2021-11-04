@@ -76,7 +76,6 @@ void CameraServer::CameraServerRequestHandle(int funcId, void *origin, IpcIo *re
         case CAMERA_SERVER_SET_CODEC_RESOLUTION:
             CameraServer::GetInstance()->setResolution(req, reply);
             break;
-            break; 
         default:
             MEDIA_ERR_LOG("code not support:%d!", funcId);
             break;
