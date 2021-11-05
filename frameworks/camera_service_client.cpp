@@ -98,7 +98,7 @@ int CameraServiceClient::Callback(void* owner, int code, IpcIo *reply)
 
             CameraAbility *cameraAbility = new (nothrow) CameraAbility;
             if (cameraAbility != nullptr) {
-                cameraAbility->SetParameterRange(CAM_IMAGE_YUV420, supportSizeList);
+                cameraAbility->SetParameterRange(supportProperties, supportSizeList);
                 cameraAbility->SetParameterRange(CAM_AF_MODE, afModeList);
                 cameraAbility->SetParameterRange(CAM_AE_MODE, aeModeList);
                 client->deviceAbilityMap_.insert(
@@ -126,9 +126,14 @@ int CameraServiceClient::Callback(void* owner, int code, IpcIo *reply)
             uint32_t listSize = IpcIoPopUint32(reply);
             for (uint32_t i = 0; i < listSize; i++) {
                 size_t sz;
-                string cameraId((const char*)(IpcIoPopString(reply, &sz)));
-                client->list_.emplace_back(cameraId);
-                MEDIA_INFO_LOG("Callback : cameraId %s", cameraId.c_str());
+                uint8_t *id = IpcIoPopString(reply, &sz);
+                if (id != nullptr) {
+                    string cameraId((const char*)id);
+                    client->list_.emplace_back(cameraId);
+                    MEDIA_INFO_LOG("Callback : cameraId %s", cameraId.c_str());
+                } else {
+                    MEDIA_ERR_LOG("IpcIoPopString error, id is null in camera_service_client!");
+                }
             }
             break;
         }

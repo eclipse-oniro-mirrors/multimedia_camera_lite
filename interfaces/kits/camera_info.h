@@ -44,21 +44,21 @@ namespace Media {
 typedef enum {
     /* Wide angle camera */
     WIDE_ANGLE,
-    /* Fisheye camera */
-    FISH_EYE,
     /* Depth camera */
     TRUE_DEPTH,
+    /* Fisheye camera */
+    FISH_EYE,
     /* Other camera */
     OTHER_TYPE
 } CameraType;
 
 typedef enum {
+    /* other */
+    CAMERA_FACING_OTHERS,
     /* front */
     CAMERA_FACING_FRONT,
     /* back */
-    CAMERA_FACING_BACK,
-    /* other */
-    CAMERA_FACING_OTHERS
+    CAMERA_FACING_BACK
 } FacingType;
 
 class CameraInfo {

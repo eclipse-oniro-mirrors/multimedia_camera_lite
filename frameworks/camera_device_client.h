@@ -46,6 +46,10 @@ public:
     void SetCameraCallback();
     static int32_t SurfaceRequestHandler(const IpcContext* context, void *ipcMsg, IpcIo *io, void *arg);
     static int32_t DeviceClientCallback(const IpcContext* context, void *ipcMsg, IpcIo *io, void *arg);
+    int32_t setFrameRate(uint32_t frameRate);
+    int32_t setBitRate(uint32_t bitRate);
+    int32_t setResolution(uint32_t width, uint32_t height);
+
 private:
     CameraDeviceClient();
     CameraClient *cameraClient_ = nullptr;

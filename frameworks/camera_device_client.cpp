@@ -304,5 +304,54 @@ int32_t CameraDeviceClient::DeviceClientCallback(const IpcContext* context, void
     client->cameraClient_->ClearIpcMsg(ipcMsg);
     return MEDIA_OK;
 }
+
+int32_t CameraDeviceClient::setFrameRate(uint32_t frameRate)
+{
+    IpcIo io;
+    uint8_t tmpData[DEFAULT_IPC_SIZE];
+    IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 0);
+    if (cameraId_.empty()) {
+        MEDIA_ERR_LOG("no camera exist.");
+        return MEDIA_ERR;
+    }
+    IpcIoPushString(&io, cameraId_.c_str());
+    IpcIoPushUint32(&io, frameRate);
+    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_SET_CODEC_FRAME_RATE, &io, NULL, NULL);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("Set codec framerate ipc  transmission failed. (ret=%d)", ret);
+        return MEDIA_ERR;
+    }
+    return MEDIA_OK;
+}
+
+int32_t CameraDeviceClient::setBitRate(uint32_t bitRate)
+{
+    IpcIo io;
+    uint8_t tmpData[DEFAULT_IPC_SIZE];
+    IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 0);
+    IpcIoPushString(&io, cameraId_.c_str());
+    IpcIoPushUint32(&io, bitRate);
+    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_SET_CODEC_BIT_RATE, &io, NULL, NULL);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("Set codec bitrate ipc  transmission failed. (ret=%d)", ret);
+        return MEDIA_ERR;
+    }
+    return MEDIA_OK;
+}
+
+int32_t CameraDeviceClient::setResolution(uint32_t width, uint32_t height)
+{
+    IpcIo io;
+    uint8_t tmpData[DEFAULT_IPC_SIZE];
+    IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 0);
+    IpcIoPushUint32(&io, width);
+    IpcIoPushUint32(&io, height);
+    uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_SET_CODEC_RESOLUTION, &io, NULL, NULL);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("Set codec resolution  ipc  transmission failed. (ret=%d)", ret);
+        return MEDIA_ERR;
+    }
+    return MEDIA_OK;
+}
 }
 }
