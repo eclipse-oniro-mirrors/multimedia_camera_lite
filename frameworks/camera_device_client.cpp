@@ -230,6 +230,7 @@ void CameraDeviceClient::Release()
         return;
     }
     IpcIoPushString(&io, cameraId_.c_str());
+    IpcIoPushSvc(&io, &sid_);
     CallBackPara para = {};
     para.funcId = CAMERA_SERVER_CLOSE_CAMERA;
     uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_CLOSE_CAMERA, &io,  &para, Callback);
