@@ -221,7 +221,7 @@ void CameraDeviceClient::Release()
 {
     IpcIo io;
     uint8_t tmpData[DEFAULT_IPC_SIZE];
-    IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 0);
+    IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 1);
     if (cameraId_.empty()) {
         MEDIA_ERR_LOG("no camera exist.");
         return;
