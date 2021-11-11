@@ -230,6 +230,7 @@ void CameraDeviceClient::Release()
         return;
     }
     IpcIoPushString(&io, cameraId_.c_str());
+    IpcIoPushSvc(&io, &sid_);
     CallBackPara para = {};
     para.funcId = CAMERA_SERVER_CLOSE_CAMERA;
     uint32_t ret = proxy_->Invoke(proxy_, CAMERA_SERVER_CLOSE_CAMERA, &io,  &para, Callback);
@@ -309,7 +310,7 @@ int32_t CameraDeviceClient::setFrameRate(uint32_t frameRate)
 {
     IpcIo io;
     uint8_t tmpData[DEFAULT_IPC_SIZE];
-    IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 0);
+    IpcIoInit(&io, tmpData, DEFAULT_IPC_SIZE, 1);
     if (cameraId_.empty()) {
         MEDIA_ERR_LOG("no camera exist.");
         return MEDIA_ERR;
