@@ -34,8 +34,8 @@ shared_library("camera_server") {
   deps = [
     "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
     "//base/security/permission/services/permission_lite/pms_client:pms_client",
-    "//device/hisilicon/hardware:hardware_media_sdk",
-    "//device/hisilicon/modules/middleware:middleware_source_sdk",
+    "//device/soc/hisilicon/common/hi35xx_hal/media:hardware_media_sdk",
+    "//device/soc/hisilicon/common/hi35xx_hal/middleware:middleware_source_sdk",
     "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
