@@ -18,7 +18,7 @@ shared_library("camera_server") {
     "./src/camera_service.cpp",
     "./src/samgr_camera.cpp",
   ]
-  include_dirs = ["./include"]
+  include_dirs = [ "./include" ]
   public_configs = [ ":external_camera_server_library" ]
   ldflags = [
     "-lstdc++",
@@ -64,6 +64,6 @@ config("external_camera_server_library") {
     "//foundation/multimedia/utils/lite/hals",
     "//foundation/multimedia/camera_lite/frameworks",
     "//drivers/peripheral/display/interfaces/include",
-    "//drivers/peripheral/base"
+    "//drivers/peripheral/base",
   ]
 }
