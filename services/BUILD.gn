@@ -18,7 +18,7 @@ shared_library("camera_server") {
     "./src/camera_service.cpp",
     "./src/samgr_camera.cpp",
   ]
-  include_dirs = ["./include"]
+  include_dirs = [ "./include" ]
   public_configs = [ ":external_camera_server_library" ]
   ldflags = [
     "-lstdc++",
@@ -34,8 +34,8 @@ shared_library("camera_server") {
   deps = [
     "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
     "//base/security/permission/services/permission_lite/pms_client:pms_client",
-    "//device/hisilicon/hardware:hardware_media_sdk",
-    "//device/hisilicon/modules/middleware:middleware_source_sdk",
+    "//device/soc/hisilicon/common/hal/media:hardware_media_sdk",
+    "//device/soc/hisilicon/common/hal/middleware:middleware_source_sdk",
     "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
@@ -64,6 +64,6 @@ config("external_camera_server_library") {
     "//foundation/multimedia/utils/lite/hals",
     "//foundation/multimedia/camera_lite/frameworks",
     "//drivers/peripheral/display/interfaces/include",
-    "//drivers/peripheral/base"
+    "//drivers/peripheral/base",
   ]
 }
