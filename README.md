@@ -8,7 +8,7 @@
 
 ## Introduction<a name="section11660541593"></a>
 
-This repository provides the camera capability.
+This repository provides the camera capability, including camera creation, deletion, configuration, preview, recording, and photo capture. It supports multi-stream concurrency for a single camera, as well as H264/HEVC/JPEG hardware encoding, encoded stream callbacks, and encoding parameter configuration.
 
 **Figure  1**  Position of this repository \(in the dotted blue box\) in the multimedia subsystem<a name="fig4655174610594"></a>  
 ![](figures/position-of-this-repository-(in-the-dotted-blue-box)-in-the-multimedia-subsystem.png "position-of-this-repository-(in-the-dotted-blue-box)-in-the-multimedia-subsystem")
