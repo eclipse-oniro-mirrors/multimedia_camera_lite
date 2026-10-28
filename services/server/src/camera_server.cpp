@@ -302,6 +302,10 @@ void CameraServer::TriggerSingleCapture(IpcIo *req, IpcIo *reply)
     size_t sz;
     string cameraId((const char *)(ReadString(req, &sz)));
     CameraDevice *device_ = CameraService::GetInstance()->GetCameraDevice(cameraId);
+    if (device_ == nullptr) {
+        MEDIA_INFO_LOG("device_ is null in camera_server.cpp!");
+        return;
+    }
     FrameConfig *fc = DeserializeFrameConfig(*req);
     if (fc == nullptr) {
         MEDIA_ERR_LOG("Deserialize frame config failed.");
