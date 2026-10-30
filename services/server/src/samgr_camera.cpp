@@ -80,18 +80,27 @@ static int32 Invoke(IServerProxy* iProxy, int funcId, void* origin, IpcIo* req, 
     return EC_SUCCESS;
 }
 
-static CameraService g_example = {
-    .GetName = GetName,
-    .Initialize = Initialize,
-    .MessageHandle = MessageHandle,
-    .GetTaskConfig = GetTaskConfig,
-    SERVER_IPROXY_IMPL_BEGIN,
-    .Invoke = Invoke,
-    IPROXY_END,
-};
+// C++11 兼容：原本使用 C++20 指定初始化器（designated initializer），
+// 现改为默认构造 + 逐字段赋值，字段顺序与 CameraService 声明顺序一致。
+static CameraService g_example = {};
+
+static void InitCameraService(void)
+{
+    g_example.GetName = GetName;
+    g_example.Initialize = Initialize;
+    g_example.MessageHandle = MessageHandle;
+    g_example.GetTaskConfig = GetTaskConfig;
+    g_example.ver = SERVER_IMPL_PROXY_VER;
+    g_example.ref = 1;
+    g_example.iUnknown.QueryInterface = IUNKNOWN_QueryInterface;
+    g_example.iUnknown.AddRef = IUNKNOWN_AddRef;
+    g_example.iUnknown.Release = IUNKNOWN_Release;
+    g_example.iUnknown.Invoke = Invoke;
+}
 
 static void Init(void)
 {
+    InitCameraService();
     SAMGR_GetInstance()->RegisterService((Service*)&g_example);
     SAMGR_GetInstance()->RegisterDefaultFeatureApi(Media::SERVICE_NAME, GET_IUNKNOWN(g_example));
 }

@@ -95,7 +95,7 @@ AvCodecMime ConverFormat(ImageFormat format)
 
 static int32_t SetVencSource(CODEC_HANDLETYPE codecHdl, uint32_t deviceId)
 {
-    Param param = {.key = KEY_DEVICE_ID, .val = (void *)&deviceId, .size = sizeof(uint32_t)};
+    Param param = {KEY_DEVICE_ID, (void *)&deviceId, sizeof(uint32_t)};
     int32_t ret = CodecSetParameter(codecHdl, &param, 1);
     if (ret != 0) {
         MEDIA_ERR_LOG("Set enc source failed.(ret=%d)", ret);
@@ -111,11 +111,7 @@ static int32_t SetVencDeBreatheEffect(FrameConfig &fc, CODEC_HANDLETYPE codecHdl
     fc.GetParameter(PARAM_KEY_DEBREATHE_EFFECT, deBreatheEffect);
     MEDIA_DEBUG_LOG("deBreatheEffect = %d\n", deBreatheEffect);
     if (deBreatheEffect == 1) {
-        Param deBreatheParam = {
-            .key = KEY_DEBREATHE_EFFECT,
-            .val = &deBreatheEffect,
-            .size = sizeof(deBreatheEffect)
-        };
+        Param deBreatheParam = {KEY_DEBREATHE_EFFECT, &deBreatheEffect, sizeof(deBreatheEffect)};
         int32_t ret = CodecSetParameter(codecHdl, &deBreatheParam, 1);
         if (ret != 0) {
             MEDIA_ERR_LOG("set DeBreatheEffect is faild, (ret=%d)", ret);
@@ -363,11 +359,7 @@ static int32_t SetPicEncQFactor(FrameConfig &fc, CODEC_HANDLETYPE codecHdl)
     int32_t qfactor = -1;
     fc.GetParameter(PARAM_KEY_IMAGE_ENCODE_QFACTOR, qfactor);
     if (qfactor != -1) {
-        Param jpegParam = {
-            .key = KEY_IMAGE_Q_FACTOR,
-            .val = &qfactor,
-            .size = sizeof(qfactor)
-        };
+        Param jpegParam = {KEY_IMAGE_Q_FACTOR, &qfactor, sizeof(qfactor)};
         int32_t ret = CodecSetParameter(codecHdl, &jpegParam, 1);
         if (ret != 0) {
             MEDIA_ERR_LOG("CodecSetParameter set jpeg qfactor failed.(ret=%u)", ret);

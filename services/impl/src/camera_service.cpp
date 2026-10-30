@@ -166,7 +166,7 @@ void CameraService::SetCameraFormatRanges(CameraAbility *ability, const std::str
 #endif
     list<CameraPicSize> range;
     for (int pos = 0; pos < streamCapNum; pos++) {
-        CameraPicSize tmpSize = {.width = (uint32_t)streamCap[pos].u.formatEnum.width, .height =
+        CameraPicSize tmpSize = {(uint32_t)streamCap[pos].u.formatEnum.width,
             (uint32_t)streamCap[pos].u.formatEnum.height};
         range.emplace_back(tmpSize);
     }

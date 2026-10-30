@@ -30,7 +30,7 @@ public:
     template<typename T> std::list<T> GetParameterRange(uint32_t key) const;
 
 private:
-    void SetSupportParameterRange(uint32_t key, std::list<CameraPicSize> &rangeList);
+    void SetSupportParameterRange(uint32_t key, const std::list<CameraPicSize> &rangeList);
     std::list<CameraPicSize> GetSupportParameterRange(uint32_t key) const;
     bool IsParameterSupport(uint32_t key) const;
     std::map<uint32_t, std::list<CameraPicSize>> SizeMap_;
